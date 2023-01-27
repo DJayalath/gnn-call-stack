@@ -212,7 +212,7 @@ def make_sampler(length: int,
     num_samples = clrs.CLRS30[split]['num_samples'] * multiplier
     sampler, spec = clrs.build_sampler(
         algorithm,
-        seed=rng.randint(2**32),
+        seed=rng.randint(2**32, dtype=np.uint32),
         num_samples=num_samples,
         length=length,
         **sampler_kwargs,
@@ -376,7 +376,7 @@ def main(unused_argv):
   train_lengths = [int(x) for x in FLAGS.train_lengths]
 
   rng = np.random.RandomState(FLAGS.seed)
-  rng_key = jax.random.PRNGKey(rng.randint(2**32))
+  rng_key = jax.random.PRNGKey(rng.randint(2**32, dtype=np.uint32))
 
   # Create samplers
   (train_samplers,
