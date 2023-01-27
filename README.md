@@ -1,4 +1,8 @@
-# The CLRS Algorithmic Reasoning Benchmark
+# GNNs with call stacks
+
+This work aims to build GNNs with call stacks for solving recursive algorithmic problems. Any modifications build from the work in the CLRS algorithmic reasoning benchmark.
+
+## The CLRS Algorithmic Reasoning Benchmark
 
 Learning representations of algorithms is an emerging area of machine learning,
 seeking to bridge concepts from neural networks with classical algorithms. The
