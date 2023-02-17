@@ -31,6 +31,7 @@ import tensorflow as tf
 import cnn_call_stack.utils as utils
 
 
+# https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['bfs'], 'Which algorithms to run.')
 flags.DEFINE_list('train_lengths', ['4', '7', '11', '13', '16'],
                   'Which training sizes to use. A size of -1 means '
@@ -118,7 +119,7 @@ flags.DEFINE_string('dataset_path', '/tmp/CLRS30',
                     'Path in which dataset is stored.')
 flags.DEFINE_boolean('freeze_processor', False,
                      'Whether to freeze the processor of the model.')
-flags.DEFINE_boolean('use_wandb', True,
+flags.DEFINE_boolean('use_wandb', False,
                      'Whether to log to weights and biases.')
 
 FLAGS = flags.FLAGS
@@ -251,12 +252,15 @@ def make_multi_sampler(sizes, rng, **kwargs):
 def _concat(dps, axis):
   return jax.tree_util.tree_map(lambda *x: np.concatenate(x, axis), *dps)
 
-
+# predict_fn: basically BaselineModel.predict() (baselines.py)
 def collect_and_eval(sampler, predict_fn, sample_count, rng_key, extras):
   """Collect batches of output and hint preds and evaluate them."""
   processed_samples = 0
   preds = []
   outputs = []
+  # feedback.features.hints[7 | "time"] suggests that the dimensions are [time, batch, ...] where the same time can
+  # occur multiple times, the last one might be < 1.0 and
+  # The sample includes all the time steps so this is where we iterate over them
   while processed_samples < sample_count:
     feedback = next(sampler)
     batch_size = feedback.outputs[0].data.shape[0]

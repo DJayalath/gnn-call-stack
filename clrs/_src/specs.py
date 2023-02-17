@@ -74,6 +74,7 @@ CLRS_30_ALGS = [
     'bubble_sort',
     'dag_shortest_paths',
     'dfs',
+    'dfs_callstack',
     'dijkstra',
     'find_maximum_subarray_kadane',
     'floyd_warshall',
@@ -285,6 +286,21 @@ SPECS = types.MappingProxyType({
         'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         's_last': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_callstack': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+        'pi_h': (Stage.HINT, Location.NODE, Type.POINTER),
+        'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
+        'd': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'f': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        's': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
     'topological_sort': {

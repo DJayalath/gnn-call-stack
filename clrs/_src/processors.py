@@ -52,11 +52,11 @@ class Processor(hk.Module):
     """Processor inference step.
 
     Args:
-      node_fts: Node features.
-      edge_fts: Edge features.
-      graph_fts: Graph features.
-      adj_mat: Graph adjacency matrix.
-      hidden: Hidden features.
+      node_fts: Node features. [batch_size, num_nodes, embedding_size]
+      edge_fts: Edge features. [batch_size, num_nodes, num_nodes, embedding_size]
+      graph_fts: Graph features. [batch_size, embedding_size]
+      adj_mat: Graph adjacency matrix. [batch_size, num_nodes, num_nodes]
+      hidden: Hidden features. [batch_size, num_nodes, embedding_size]
       **kwargs: Extra kwargs.
 
     Returns:
