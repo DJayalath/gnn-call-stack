@@ -176,9 +176,9 @@ def dfs(A: _Array) -> _Out:
 
 
 class StackOp(Enum):
-  PUSH = 0
-  POP = 1
-  NOOP = 2
+  POP = 0
+  NOOP = 1
+  PUSH = 2
 def dfs_callstack(A: _Array) -> _Out:
   """Depth-first search (Moore, 1959)."""
 
