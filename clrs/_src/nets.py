@@ -81,6 +81,7 @@ class Net(hk.Module):
       decode_hints: bool,
       processor_factory: processors.ProcessorFactory,
       use_lstm: bool,
+      # TODO: Introduce use_stack attribute
       encoder_init: str,
       dropout_prob: float,
       hint_teacher_forcing: float,
@@ -102,6 +103,7 @@ class Net(hk.Module):
     self.processor_factory = processor_factory
     self.nb_dims = nb_dims
     self.use_lstm = use_lstm
+    # TODO: Introduce use_stack
     self.encoder_init = encoder_init
     self.nb_msg_passing_steps = nb_msg_passing_steps
 
@@ -165,6 +167,8 @@ class Net(hk.Module):
             probing.DataPoint(
                 name=hint.name, location=loc, type_=typ, data=hint_data))
 
+    # This is the one and only non-chunked location where one_step_pred is called.
+    # TODO: We should pass the stack state into this step so we can expose the top.
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens,
         batch_size, nb_nodes, mp_state.lstm_state,
@@ -435,6 +439,9 @@ class Net(hk.Module):
           graph_fts = encoders.accum_graph_fts(encoder, dp, graph_fts)
         except Exception as e:
           raise Exception(f'Failed to process {dp}') from e
+
+    # Graph features are accumulated above by *summing* the features for every data point
+    # TODO: Similarly, we can sum the top of call stack embedding to the graph_fts
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nxt_hidden = hidden
