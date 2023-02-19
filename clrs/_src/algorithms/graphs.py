@@ -174,13 +174,15 @@ def dfs(A: _Array) -> _Out:
 
   return pi, probes
 
+
+class StackOp(Enum):
+  PUSH = 0
+  POP = 1
+  NOOP = 2
 def dfs_callstack(A: _Array) -> _Out:
   """Depth-first search (Moore, 1959)."""
 
-  class StackOp(Enum):
-    PUSH = 0
-    POP = 1
-    NOOP = 2
+
 
   chex.assert_rank(A, 2)
   probes = probing.initialize(specs.SPECS['dfs_callstack'])

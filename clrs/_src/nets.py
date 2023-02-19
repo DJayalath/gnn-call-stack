@@ -32,6 +32,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 
+from clrs._src.algorithms.graphs import StackOp
 
 _Array = chex.Array
 _DataPoint = probing.DataPoint
@@ -50,6 +51,7 @@ class _MessagePassingScanState:
   output_preds: chex.Array
   hiddens: chex.Array
   lstm_state: Optional[hk.LSTMState]
+  stack: Optional[List[List[chex.Array]]]
 
 
 @chex.dataclass
@@ -117,7 +119,8 @@ class Net(hk.Module):
                         encs: Dict[str, List[hk.Module]],
                         decs: Dict[str, Tuple[hk.Module]],
                         return_hints: bool,
-                        return_all_outputs: bool
+                        return_all_outputs: bool,
+                        num_hiddens_for_stack: int
                         ):
     if self.decode_hints and not first_step:
       assert self._hint_repred_mode in ['soft', 'hard', 'hard_on_eval']
@@ -167,6 +170,30 @@ class Net(hk.Module):
         batch_size, nb_nodes, mp_state.lstm_state,
         spec, encs, decs, repred)
 
+    stack = mp_state.stack
+    stack_new = []
+    if "stack_op" in hint_preds:
+      # When num_hiddens_for_stack is set to same as hidden_dim (128), this reduces to Petar's suggestion.
+      # Otherwise, it allows the algorithm to only save a subset of stuff to the stack and use the rest of the
+      # embeddings just for predictions
+
+      # [batch_size] containing [0 (push), 1 (pop) or 2 (noop)] TODO make enum accessible from here
+      stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
+      for j, cur_stack in enumerate(stack): # Not sure how this could be vectorized in jax
+        stack_new.append(jax.lax.cond(stack_ops[j] == StackOp.PUSH.value, # jnp.max(hiddens[j, :, :num_hiddens_for_stack], axis=1)
+                                      lambda cur_stack, hiddens, j, num_hiddens_for_stack: cur_stack + [jnp.zeros((num_hiddens_for_stack, ))],
+                                      lambda *args: None,
+                                      cur_stack, hiddens, j, num_hiddens_for_stack))
+        # if stack_ops[j] == StackOp.PUSH.value:
+        #   # [batch_size, stack_size] The values that would be pushed to the stack for each sample, if the operation would be push
+        #   # (hiddens: [batch_size, num_nodes, hidden_dim])
+        #   cur_stack.append(jnp.max(hiddens[j, :, :num_hiddens_for_stack], axis=1)) # TODO make jnp.max hyperparameter (allow sum etc)
+        # elif stack_ops[j] == StackOp.POP.value:
+        #   if len(cur_stack) > 1: # Always maintain the initial stack element standing for an empty stack
+        #     cur_stack.pop()
+        # elif stack_ops[j] != StackOp.NOOP.value:
+        #   raise ValueError(f"Unknown stack operation {stack_ops[j]}!")
+
     if first_step:
       output_preds = output_preds_cand
     else:
@@ -181,12 +208,12 @@ class Net(hk.Module):
         hint_preds=hint_preds,
         output_preds=output_preds,
         hiddens=hiddens,
-        lstm_state=lstm_state)
+        lstm_state=lstm_state, stack=stack_new)
     # Save memory by not stacking unnecessary fields
     accum_mp_state = _MessagePassingScanState(
         hint_preds=hint_preds if return_hints else None,
         output_preds=output_preds if return_all_outputs else None,
-        hiddens=None, lstm_state=None)
+        hiddens=None, lstm_state=None, stack=None)
 
     # Complying to jax.scan, the first returned value is the state we carry over
     # the second value is the output that will be stacked over steps.
@@ -195,7 +222,8 @@ class Net(hk.Module):
   def __call__(self, features_list: List[_Features], repred: bool,
                algorithm_index: int,
                return_hints: bool,
-               return_all_outputs: bool):
+               return_all_outputs: bool,
+               num_hiddens_for_stack: int=64): # TODO obviously make this a hyperparameter.
     """Process one batch of data.
 
     Args:
@@ -243,6 +271,8 @@ class Net(hk.Module):
       self.lstm = None
       lstm_init = lambda x: 0
 
+    # We only loop over algorithms for initialization, otherwise, we can assume it to be fixed
+    # feature list length is also often 1, so this loop would only get executed once
     for algorithm_index, features in zip(algorithm_indices, features_list):
       inputs = features.inputs
       hints = features.hints
@@ -252,6 +282,7 @@ class Net(hk.Module):
 
       nb_mp_steps = max(1, hints[0].data.shape[0] - 1)
       hiddens = jnp.zeros((batch_size, nb_nodes, self.hidden_dim))
+      stack = [[jnp.zeros((num_hiddens_for_stack,))] for _ in range(batch_size)]
 
       if self.use_lstm:
         lstm_state = lstm_init(batch_size * nb_nodes)
@@ -263,7 +294,7 @@ class Net(hk.Module):
 
       mp_state = _MessagePassingScanState(
           hint_preds=None, output_preds=None,
-          hiddens=hiddens, lstm_state=lstm_state)
+          hiddens=hiddens, lstm_state=lstm_state, stack=stack)
 
       # Do the first step outside of the scan because it has a different
       # computation graph.
@@ -279,7 +310,12 @@ class Net(hk.Module):
           decs=self.decoders[algorithm_index],
           return_hints=return_hints,
           return_all_outputs=return_all_outputs,
+          num_hiddens_for_stack=num_hiddens_for_stack
           )
+
+
+      # mp_state contains the predictions from _one_step_pred (encapsulated by _msg_passing_step)
+      # lean_mp_state is the same with some attributes set to None if they're not required
       mp_state, lean_mp_state = self._msg_passing_step(
           mp_state,
           i=0,
@@ -292,6 +328,7 @@ class Net(hk.Module):
           first_step=False,
           **common_args)
 
+      # This is where we actually loop over the different execution/time steps
       output_mp_state, accum_mp_state = hk.scan(
           scan_fn,
           mp_state,
@@ -378,14 +415,17 @@ class Net(hk.Module):
         jnp.expand_dims(jnp.eye(nb_nodes), 0), batch_size, axis=0)
 
     # ENCODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Encode node/edge/graph features from inputs and (optionally) hints.
+    # Encode node/edge/graph features from inputs and (optionally) hints. (f_e, f_g, f)
     trajectories = [inputs]
     if self.encode_hints:
       trajectories.append(hints)
 
-    for trajectory in trajectories:
-      for dp in trajectory:
+    for trajectory in trajectories: # this only iterates over 2 (encode_hints=True, default) or 1 (encode_hints=False) items
+      for dp in trajectory: # iterates over the different data points in the trajectory (time, color, s, ...)
         try:
+          # Note that the whole one_step_pred method only gets information from one execution step
+          # Here, we feed them into f, f_g or f_e depending on whether they are node/edge/graph features
+          # and add (summation) them to the corresponding embedding(s)
           dp = encoders.preprocess(dp, nb_nodes)
           assert dp.type_ != _Type.SOFT_POINTER
           adj_mat = encoders.accum_adj_mat(dp, adj_mat)
@@ -398,6 +438,7 @@ class Net(hk.Module):
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nxt_hidden = hidden
+    # These are just the message passing steps within one execution steps
     for _ in range(self.nb_msg_passing_steps):
       nxt_hidden, nxt_edge = self.processor(
           node_fts,
