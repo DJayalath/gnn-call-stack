@@ -170,9 +170,13 @@ class Net(hk.Module):
 
     # This is the one and only non-chunked location where one_step_pred is called.
     # TODO: We should pass the stack state into this step so we can expose the top.
+    if mp_state.stack is None:
+      top_stack = None
+    else:
+      top_stack = mp_state.stack.reshape(-1, mp_state.stack.shape[-1])[mp_state.stack_pointers + 1 + 3 * jnp.arange(mp_state.stack.shape[0]), :]
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens,
-        batch_size, nb_nodes, mp_state.lstm_state,
+        batch_size, nb_nodes, mp_state.lstm_state, top_stack,
         spec, encs, decs, repred)
 
     # [batch_size, max_stack_size/num_time_steps, num_hiddens_for_stack]
@@ -408,6 +412,7 @@ class Net(hk.Module):
       batch_size: int,
       nb_nodes: int,
       lstm_state: Optional[hk.LSTMState],
+      top_stack: Optional[_Array],
       spec: _Spec,
       encs: Dict[str, List[hk.Module]],
       decs: Dict[str, Tuple[hk.Module]],
@@ -446,6 +451,8 @@ class Net(hk.Module):
 
     # Graph features are accumulated above by *summing* the features for every data point
     # TODO: Similarly, we can sum the top of call stack embedding to the graph_fts
+    # graph_fts = graph_fts + top_stack
+    # graph_fts = jnp.concatenate((graph_fts, top_stack), axis=1)
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nxt_hidden = hidden
