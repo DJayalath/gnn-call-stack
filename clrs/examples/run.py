@@ -32,7 +32,7 @@ import cnn_call_stack.utils as utils
 
 
 # https://abseil.io/docs/python/guides/flags
-flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
+flags.DEFINE_list('algorithms', ['dfs'], 'Which algorithms to run.')
 flags.DEFINE_list('train_lengths', ['4', '7', '11', '13', '16'],
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
@@ -59,7 +59,7 @@ flags.DEFINE_integer('chunk_length', 16,
                      '`chunked_training` is True.')
 flags.DEFINE_integer('train_steps', 10000, 'Number of training iterations.')
 flags.DEFINE_integer('eval_every', 50, 'Evaluation frequency (in steps).')
-flags.DEFINE_integer('test_every', 500, 'Evaluation frequency (in steps).')
+flags.DEFINE_integer('test_every', 100, 'Evaluation frequency (in steps).')
 
 flags.DEFINE_integer('hidden_size', 128,
                      'Number of hidden units of the model.')
@@ -444,6 +444,7 @@ def main(unused_argv):
   current_train_items = [0] * len(FLAGS.algorithms)
   step = 0
   next_eval = 0
+  next_test = 0
   # Make sure scores improve on first step, but not overcome best score
   # until all algos have had at least one evaluation.
   val_scores = [-99999.9] * len(FLAGS.algorithms)
@@ -514,7 +515,7 @@ def main(unused_argv):
         # logging.info('(val) algo %s step %d: %s',
         #              FLAGS.algorithms[algo_idx], step, val_stats)
         utils.log({FLAGS.algorithms[algo_idx]:
-                     {k: v for k, v in val_stats.items() if k not in ["step", "algorithm"]}}, step=step)
+                     {"val." + k: v for k, v in val_stats.items() if k not in ["step", "algorithm"]}}, step=step)
         val_scores[algo_idx] = val_stats['score']
 
       next_eval += FLAGS.eval_every
@@ -533,6 +534,25 @@ def main(unused_argv):
         train_model.save_model('best.pkl')
       else:
         logging.info('Not saving new best model, %s', msg)
+
+    if step >= next_test:
+      for algo_idx in range(len(train_samplers)):
+        common_extras = {'examples_seen': current_train_items[algo_idx],
+                         'step': step,
+                         'algorithm': FLAGS.algorithms[algo_idx]}
+
+        new_rng_key, rng_key = jax.random.split(rng_key)
+        test_stats = collect_and_eval(
+          test_samplers[algo_idx],
+          functools.partial(eval_model.predict, algorithm_index=algo_idx),
+          test_sample_counts[algo_idx],
+          new_rng_key,
+          extras=common_extras)
+        logging.info('(test) algo %s : %s', FLAGS.algorithms[algo_idx], test_stats)
+        utils.log({FLAGS.algorithms[algo_idx]: {
+          "test.score": test_stats["score"]
+        }}, step=step)
+        next_test += FLAGS.test_every
 
     step += 1
     length_idx = (length_idx + 1) % len(train_lengths)
