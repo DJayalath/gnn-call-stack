@@ -153,6 +153,7 @@ class BaselineModel(model.Model):
       hint_teacher_forcing: float = 0.0,
       num_hiddens_for_stack: int = 64,
       stack_pooling_fun: str = 'max',
+      use_callstack: bool = False,
       hint_repred_mode: str = 'soft',
       name: str = 'base_model',
       nb_msg_passing_steps: int = 1,
@@ -239,24 +240,24 @@ class BaselineModel(model.Model):
         nb_dims[outp.name] = outp.data.shape[-1]
       self.nb_dims.append(nb_dims)
 
-    self._create_net_fns(hidden_dim, encode_hints, processor_factory, use_lstm,
-                         encoder_init, dropout_prob, hint_teacher_forcing,
-                         num_hiddens_for_stack, getattr(jnp, stack_pooling_fun),
-                         hint_repred_mode)
+    self._create_net_fns(hidden_dim=hidden_dim, encode_hints=encode_hints, processor_factory=processor_factory, use_lstm=use_lstm,
+                         encoder_init=encoder_init, dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
+                         num_hiddens_for_stack=num_hiddens_for_stack, stack_pooling_fun=getattr(jnp, stack_pooling_fun), use_callstack=use_callstack,
+                         hint_repred_mode=hint_repred_mode)
     self._device_params = None
     self._device_opt_state = None
     self.opt_state_skeleton = None
 
   def _create_net_fns(self, hidden_dim, encode_hints, processor_factory,
                       use_lstm, encoder_init, dropout_prob,
-                      hint_teacher_forcing, num_hiddens_for_stack, stack_pooling_fun, hint_repred_mode):
+                      hint_teacher_forcing, num_hiddens_for_stack, stack_pooling_fun, use_callstack, hint_repred_mode):
     def _use_net(*args, **kwargs):
-      return nets.Net(self._spec, hidden_dim, encode_hints, self.decode_hints,
-                      processor_factory, use_lstm, encoder_init,
-                      dropout_prob, hint_teacher_forcing,
-                      num_hiddens_for_stack, stack_pooling_fun,
-                      hint_repred_mode,
-                      self.nb_dims, self.nb_msg_passing_steps)(*args, **kwargs)
+      return nets.Net(self._spec, hidden_dim=hidden_dim, encode_hints=encode_hints, decode_hints=self.decode_hints,
+                      processor_factory=processor_factory, use_lstm=use_lstm, encoder_init=encoder_init,
+                      dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
+                      num_hiddens_for_stack=num_hiddens_for_stack, stack_pooling_fun=stack_pooling_fun,
+                      use_callstack=use_callstack, hint_repred_mode=hint_repred_mode,
+                      nb_dims=self.nb_dims, nb_msg_passing_steps=self.nb_msg_passing_steps)(*args, **kwargs)
 
     self.net_fn = hk.transform(_use_net)
     pmap_args = dict(axis_name='batch', devices=jax.local_devices())
