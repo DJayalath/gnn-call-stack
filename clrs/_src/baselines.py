@@ -151,6 +151,8 @@ class BaselineModel(model.Model):
       freeze_processor: bool = False,
       dropout_prob: float = 0.0,
       hint_teacher_forcing: float = 0.0,
+      num_hiddens_for_stack: int = 64,
+      stack_pooling_fun: str = 'max',
       hint_repred_mode: str = 'soft',
       name: str = 'base_model',
       nb_msg_passing_steps: int = 1,
@@ -239,6 +241,7 @@ class BaselineModel(model.Model):
 
     self._create_net_fns(hidden_dim, encode_hints, processor_factory, use_lstm,
                          encoder_init, dropout_prob, hint_teacher_forcing,
+                         num_hiddens_for_stack, getattr(jnp, stack_pooling_fun),
                          hint_repred_mode)
     self._device_params = None
     self._device_opt_state = None
@@ -246,11 +249,12 @@ class BaselineModel(model.Model):
 
   def _create_net_fns(self, hidden_dim, encode_hints, processor_factory,
                       use_lstm, encoder_init, dropout_prob,
-                      hint_teacher_forcing, hint_repred_mode):
+                      hint_teacher_forcing, num_hiddens_for_stack, stack_pooling_fun, hint_repred_mode):
     def _use_net(*args, **kwargs):
       return nets.Net(self._spec, hidden_dim, encode_hints, self.decode_hints,
                       processor_factory, use_lstm, encoder_init,
                       dropout_prob, hint_teacher_forcing,
+                      num_hiddens_for_stack, stack_pooling_fun,
                       hint_repred_mode,
                       self.nb_dims, self.nb_msg_passing_steps)(*args, **kwargs)
 

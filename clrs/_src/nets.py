@@ -17,7 +17,7 @@
 
 import functools
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Callable
 
 import chex
 
@@ -86,16 +86,20 @@ class Net(hk.Module):
       encoder_init: str,
       dropout_prob: float,
       hint_teacher_forcing: float,
+      num_hiddens_for_stack: int,
+      stack_pooling_fun: Callable,
       hint_repred_mode='soft',
       nb_dims=None,
       nb_msg_passing_steps=1,
-      name: str = 'net',
+      name: str = 'net'
   ):
     """Constructs a `Net`."""
     super().__init__(name=name)
 
     self._dropout_prob = dropout_prob
     self._hint_teacher_forcing = hint_teacher_forcing
+    self.num_hiddens_for_stack = num_hiddens_for_stack
+    self.stack_pooling_fun = stack_pooling_fun
     self._hint_repred_mode = hint_repred_mode
     self.spec = spec
     self.hidden_dim = hidden_dim
@@ -122,8 +126,7 @@ class Net(hk.Module):
                         encs: Dict[str, List[hk.Module]],
                         decs: Dict[str, Tuple[hk.Module]],
                         return_hints: bool,
-                        return_all_outputs: bool,
-                        num_hiddens_for_stack: int
+                        return_all_outputs: bool
                         ):
     if self.decode_hints and not first_step:
       assert self._hint_repred_mode in ['soft', 'hard', 'hard_on_eval']
@@ -191,7 +194,7 @@ class Net(hk.Module):
       # [batch_size] containing [0 (pop), 1 (noop) or 2 (push)]
       stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
       # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
-      new_stack_vals = jnp.max(hiddens[:, :, :num_hiddens_for_stack], axis=1)
+      new_stack_vals = self.stack_pooling_fun(hiddens[:, :, :self.num_hiddens_for_stack], axis=1)
       # values that will actually be on top of the stack in the next round
       # new_stack_vals = jnp.where(stack_ops[:, None] == StackOp.PUSH.value, new_stack_vals,
       #                            stack.reshape(-1, stack.shape[-1])[stack_pointers + 3 * jnp.arange(stack.shape[0]), :])
@@ -230,8 +233,7 @@ class Net(hk.Module):
   def __call__(self, features_list: List[_Features], repred: bool,
                algorithm_index: int,
                return_hints: bool,
-               return_all_outputs: bool,
-               num_hiddens_for_stack: int=64): # TODO obviously make this a hyperparameter.
+               return_all_outputs: bool):
     """Process one batch of data.
 
     Args:
@@ -291,7 +293,7 @@ class Net(hk.Module):
       nb_mp_steps = max(1, hints[0].data.shape[0] - 1)
       hiddens = jnp.zeros((batch_size, nb_nodes, self.hidden_dim))
       if "stack_op" in [f.name for f in features.hints]:
-        stack = jnp.zeros((batch_size, nb_mp_steps, num_hiddens_for_stack))
+        stack = jnp.zeros((batch_size, nb_mp_steps, self.num_hiddens_for_stack))
         stack_pointers = jnp.zeros((batch_size, ), dtype=int)
       else:
         stack_pointers = stack = None
@@ -321,8 +323,7 @@ class Net(hk.Module):
           encs=self.encoders[algorithm_index],
           decs=self.decoders[algorithm_index],
           return_hints=return_hints,
-          return_all_outputs=return_all_outputs,
-          num_hiddens_for_stack=num_hiddens_for_stack
+          return_all_outputs=return_all_outputs
           )
 
 

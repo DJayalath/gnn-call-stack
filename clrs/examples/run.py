@@ -119,6 +119,10 @@ flags.DEFINE_string('dataset_path', '/tmp/CLRS30',
                     'Path in which dataset is stored.')
 flags.DEFINE_boolean('freeze_processor', False,
                      'Whether to freeze the processor of the model.')
+flags.DEFINE_string('stack_pooling_fun', ['max', 'min', 'mean', 'sum'][0],
+                    'Which pooling function to use for the node embeddings before pushing them on the stack.')
+flags.DEFINE_string('stack_pooling_fun', 64,
+                    'Which pooling function to use for the node embeddings before pushing them on the stack.')
 flags.DEFINE_boolean('use_wandb', False,
                      'Whether to log to weights and biases.')
 
