@@ -121,8 +121,8 @@ flags.DEFINE_boolean('freeze_processor', False,
                      'Whether to freeze the processor of the model.')
 flags.DEFINE_string('stack_pooling_fun', ['max', 'min', 'mean', 'sum'][0],
                     'Which pooling function to use for the node embeddings before pushing them on the stack.')
-flags.DEFINE_string('stack_pooling_fun', 64,
-                    'Which pooling function to use for the node embeddings before pushing them on the stack.')
+flags.DEFINE_integer('num_hiddens_for_stack', 64,
+                    'How many of the node embedding entries to use for generating the stack embedding.')
 flags.DEFINE_boolean('use_wandb', False,
                      'Whether to log to weights and biases.')
 
