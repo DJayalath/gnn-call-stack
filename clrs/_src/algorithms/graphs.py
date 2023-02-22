@@ -211,7 +211,6 @@ def dfs_hard(A: _Array) -> _Out:
               'color': probing.array_cat(color, 3),
               'd': np.copy(d),
               'f': np.copy(f),
-              's': probing.mask_one(s, A.shape[0]),
               'u': probing.mask_one(u, A.shape[0]),
               'v': probing.mask_one(v, A.shape[0]),
               'time': time
@@ -229,7 +228,6 @@ def dfs_hard(A: _Array) -> _Out:
                   'color': probing.array_cat(color, 3),
                   'd': np.copy(d),
                   'f': np.copy(f),
-                  's': probing.mask_one(s, A.shape[0]),
                   'u': probing.mask_one(u, A.shape[0]),
                   'v': probing.mask_one(v, A.shape[0]),
                   'time': time
@@ -251,7 +249,6 @@ def dfs_hard(A: _Array) -> _Out:
                       'color': probing.array_cat(color, 3),
                       'd': np.copy(d),
                       'f': np.copy(f),
-                      's': probing.mask_one(s, A.shape[0]),
                       'u': probing.mask_one(u, A.shape[0]),
                       'v': probing.mask_one(v, A.shape[0]),
                       'time': time
@@ -271,7 +268,6 @@ def dfs_hard(A: _Array) -> _Out:
                   'color': probing.array_cat(color, 3),
                   'd': np.copy(d),
                   'f': np.copy(f),
-                  's': probing.mask_one(s, A.shape[0]),
                   'u': probing.mask_one(u, A.shape[0]),
                   'v': probing.mask_one(v, A.shape[0]),
                   'time': time
