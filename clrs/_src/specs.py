@@ -76,6 +76,7 @@ CLRS_30_ALGS = [
     'dfs',
     'dfs_callstack',
     'dfs_hard',
+    'dfs_nohint',
     'dijkstra',
     'find_maximum_subarray_kadane',
     'floyd_warshall',
@@ -315,6 +316,13 @@ SPECS = types.MappingProxyType({
         'f': (Stage.HINT, Location.NODE, Type.SCALAR),
         'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_nohint': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
     'topological_sort': {
