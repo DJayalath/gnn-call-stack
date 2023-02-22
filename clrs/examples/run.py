@@ -128,9 +128,9 @@ flags.DEFINE_integer('num_hiddens_for_stack', 64,
 flags.DEFINE_boolean('use_callstack', False,
                      'Whether to use a callstack. This only works if the specification has a suitable hint called '
                      'stack_op.')
-flags.DEFINE_boolean('checkpoint_wandb', False,
+flags.DEFINE_boolean('checkpoint_wandb', True,
                      'Whether to save the checkpoint files to weights and biases.')
-flags.DEFINE_boolean('use_wandb', False,
+flags.DEFINE_boolean('use_wandb', True,
                      'Whether to log to weights and biases.')
 
 FLAGS = flags.FLAGS
