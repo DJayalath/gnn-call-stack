@@ -179,7 +179,7 @@ def dfs_hard(A: _Array) -> _Out:
   """Depth-first search (Moore, 1959)."""
 
   chex.assert_rank(A, 2)
-  probes = probing.initialize(specs.SPECS['dfs'])
+  probes = probing.initialize(specs.SPECS['dfs_hard'])
 
   A_pos = np.arange(A.shape[0])
 

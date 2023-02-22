@@ -304,7 +304,7 @@ SPECS = types.MappingProxyType({
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
-    'dfs': {
+    'dfs_hard': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
         'adj': (Stage.INPUT, Location.EDGE, Type.MASK),

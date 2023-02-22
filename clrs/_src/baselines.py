@@ -21,6 +21,7 @@ import pickle
 from typing import Dict, List, Optional, Tuple, Union
 
 import chex
+import wandb
 
 from clrs._src import decoders
 from clrs._src import losses
@@ -148,6 +149,7 @@ class BaselineModel(model.Model):
       learning_rate: float = 0.005,
       grad_clip_max_norm: float = 0.0,
       checkpoint_path: str = '/tmp/clrs3',
+      checkpoint_wandb: bool = False,
       freeze_processor: bool = False,
       dropout_prob: float = 0.0,
       hint_teacher_forcing: float = 0.0,
@@ -214,6 +216,7 @@ class BaselineModel(model.Model):
 
     self.decode_hints = decode_hints
     self.checkpoint_path = checkpoint_path
+    self.checkpoint_wandb = checkpoint_wandb
     self.name = name
     self._freeze_processor = freeze_processor
     if grad_clip_max_norm != 0.0:
@@ -491,6 +494,8 @@ class BaselineModel(model.Model):
     path = os.path.join(self.checkpoint_path, file_name)
     with open(path, 'wb') as f:
       pickle.dump(to_save, f)
+    if self.checkpoint_wandb:
+      wandb.save(path, policy="now")
 
 
 class BaselineModelChunked(BaselineModel):

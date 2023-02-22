@@ -106,7 +106,7 @@ flags.DEFINE_integer('nb_triplet_fts', 8,
 flags.DEFINE_enum('encoder_init', 'xavier_on_scalars',
                   ['default', 'xavier_on_scalars'],
                   'Initialiser to use for the encoders.')
-flags.DEFINE_enum('processor_type', 'mpnn', # baseline: triplet_gmpnn
+flags.DEFINE_enum('processor_type', 'triplet_gmpnn', # baseline: triplet_gmpnn
                   ['deepsets', 'mpnn', 'pgn', 'pgn_mask',
                    'triplet_mpnn', 'triplet_pgn', 'triplet_pgn_mask',
                    'gat', 'gatv2', 'gat_full', 'gatv2_full',
@@ -114,7 +114,7 @@ flags.DEFINE_enum('processor_type', 'mpnn', # baseline: triplet_gmpnn
                    'triplet_gpgn', 'triplet_gpgn_mask', 'triplet_gmpnn'],
                   'Processor type to use as the network P.')
 
-flags.DEFINE_string('checkpoint_path', '/tmp/CLRS30',
+flags.DEFINE_string('checkpoint_path', 'tmp/CLRS30',
                     'Path in which checkpoints are saved.')
 flags.DEFINE_string('dataset_path', '/tmp/CLRS30',
                     'Path in which dataset is stored.')
@@ -128,6 +128,8 @@ flags.DEFINE_integer('num_hiddens_for_stack', 64,
 flags.DEFINE_boolean('use_callstack', False,
                      'Whether to use a callstack. This only works if the specification has a suitable hint called '
                      'stack_op.')
+flags.DEFINE_boolean('checkpoint_wandb', True,
+                     'Whether to save the checkpoint files to weights and biases.')
 flags.DEFINE_boolean('use_wandb', True,
                      'Whether to log to weights and biases.')
 
@@ -422,6 +424,7 @@ def main(unused_argv):
       dropout_prob=FLAGS.dropout_prob,
       hint_teacher_forcing=FLAGS.hint_teacher_forcing,
       hint_repred_mode=FLAGS.hint_repred_mode,
+      checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
       )
 
