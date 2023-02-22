@@ -33,7 +33,7 @@ import cnn_call_stack.utils as utils
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_nohint'], 'Which algorithms to run.')
-flags.DEFINE_list('train_lengths', ['4', '7', '11', '13', '16'],
+flags.DEFINE_list('train_lengths', ['4', '8', '16', '32', '64'],
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
 flags.DEFINE_integer('length_needle', -8,
@@ -128,9 +128,9 @@ flags.DEFINE_integer('num_hiddens_for_stack', 64,
 flags.DEFINE_boolean('use_callstack', False,
                      'Whether to use a callstack. This only works if the specification has a suitable hint called '
                      'stack_op.')
-flags.DEFINE_boolean('checkpoint_wandb', True,
+flags.DEFINE_boolean('checkpoint_wandb', False,
                      'Whether to save the checkpoint files to weights and biases.')
-flags.DEFINE_boolean('use_wandb', True,
+flags.DEFINE_boolean('use_wandb', False,
                      'Whether to log to weights and biases.')
 
 FLAGS = flags.FLAGS
