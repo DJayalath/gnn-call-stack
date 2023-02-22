@@ -30,6 +30,7 @@ from clrs._src.algorithms.geometry import jarvis_march
 
 from clrs._src.algorithms.graphs import dfs
 from clrs._src.algorithms.graphs import dfs_callstack
+from clrs._src.algorithms.graphs import dfs_hard
 from clrs._src.algorithms.graphs import bfs
 from clrs._src.algorithms.graphs import topological_sort
 from clrs._src.algorithms.graphs import articulation_points
