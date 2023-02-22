@@ -648,6 +648,7 @@ SAMPLERS = {
     'task_scheduling': TaskSampler,
     'dfs': DfsSampler,
     'dfs_callstack': DfsSampler,
+    'dfs_hard': DfsSampler,
     'topological_sort': TopoSampler,
     'strongly_connected_components': SccSampler,
     'articulation_points': ArticulationSampler,
