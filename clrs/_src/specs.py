@@ -300,7 +300,6 @@ SPECS = types.MappingProxyType({
         'd': (Stage.HINT, Location.NODE, Type.SCALAR),
         'f': (Stage.HINT, Location.NODE, Type.SCALAR),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
-        's': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)

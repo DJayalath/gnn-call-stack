@@ -331,7 +331,6 @@ def dfs_callstack(A: _Array) -> _Out:
               'd': np.copy(d),
               'f': np.copy(f),
               'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-              's': probing.mask_one(s, A.shape[0]),
               'u': probing.mask_one(u, A.shape[0]),
               'v': probing.mask_one(v, A.shape[0]),
               'time': time
@@ -350,7 +349,6 @@ def dfs_callstack(A: _Array) -> _Out:
                   'd': np.copy(d),
                   'f': np.copy(f),
                   'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
-                  's': probing.mask_one(s, A.shape[0]),
                   'u': probing.mask_one(u, A.shape[0]),
                   'v': probing.mask_one(v, A.shape[0]),
                   'time': time
@@ -373,7 +371,6 @@ def dfs_callstack(A: _Array) -> _Out:
                       'd': np.copy(d),
                       'f': np.copy(f),
                       'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-                      's': probing.mask_one(s, A.shape[0]),
                       'u': probing.mask_one(u, A.shape[0]),
                       'v': probing.mask_one(v, A.shape[0]),
                       'time': time
@@ -394,7 +391,6 @@ def dfs_callstack(A: _Array) -> _Out:
                   'd': np.copy(d),
                   'f': np.copy(f),
                   'stack_op': probing.mask_one(StackOp.POP.value, 3),
-                  's': probing.mask_one(s, A.shape[0]),
                   'u': probing.mask_one(u, A.shape[0]),
                   'v': probing.mask_one(v, A.shape[0]),
                   'time': time
