@@ -59,6 +59,12 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
       
   def dfs_visit(u):
 
+    global color
+    global pi
+    global d
+    global f
+    global time
+
     time += 0.01
     d[u] = time
     color[u] = 1
