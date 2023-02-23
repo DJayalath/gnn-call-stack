@@ -50,7 +50,49 @@ _Out = Tuple[_Array, probing.ProbesDict]
 _OutputClass = specs.OutputClass
 
 def dfs_recursive_callstack(A: _Array) -> _Out:
+      
+  def dfs_visit(u):
 
+    time += 0.01
+    d[u] = time
+    color[u] = 1
+
+    for v in range(A.shape[0]):
+          if A[u, v] != 0:
+            if color[v] == 0:
+              pi[v] = u
+
+              probing.push(
+                  probes,
+                  specs.Stage.HINT,
+                  next_probe={
+                      'pi_h': np.copy(pi),
+                      'color': probing.array_cat(color, 3),
+                      'd': np.copy(d),
+                      'f': np.copy(f),
+                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+                      'time': time
+                  })
+
+              dfs_visit(v)
+
+              probing.push(
+                probes,
+                specs.Stage.HINT,
+                next_probe={
+                    'pi_h': np.copy(pi),
+                    'color': probing.array_cat(color, 3),
+                    'd': np.copy(d),
+                    'f': np.copy(f),
+                    'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                    'time': time
+              })
+
+    color[u] = 2
+    time += 0.01
+    f[u] = time
+
+  # Main DFS algorithm
   chex.assert_rank(A, 2)
   probes = probing.initialize(specs.SPECS['dfs_recursive_callstack'])
 
@@ -96,47 +138,6 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                   'stack_op': probing.mask_one(StackOp.POP.value, 3),
                   'time': time
               })
-      
-  def dfs_visit(u):
-
-    time += 0.01
-    d[u] = time
-    color[u] = 1
-
-    for v in range(A.shape[0]):
-          if A[u, v] != 0:
-            if color[v] == 0:
-              pi[v] = u
-
-              probing.push(
-                  probes,
-                  specs.Stage.HINT,
-                  next_probe={
-                      'pi_h': np.copy(pi),
-                      'color': probing.array_cat(color, 3),
-                      'd': np.copy(d),
-                      'f': np.copy(f),
-                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-                      'time': time
-                  })
-
-              dfs_visit(v)
-
-              probing.push(
-                probes,
-                specs.Stage.HINT,
-                next_probe={
-                    'pi_h': np.copy(pi),
-                    'color': probing.array_cat(color, 3),
-                    'd': np.copy(d),
-                    'f': np.copy(f),
-                    'stack_op': probing.mask_one(StackOp.POP.value, 3),
-                    'time': time
-              })
-
-    color[u] = 2
-    time += 0.01
-    f[u] = time
   
   probing.push(probes, specs.Stage.OUTPUT, next_probe={'pi': np.copy(pi)})
   probing.finalize(probes)
