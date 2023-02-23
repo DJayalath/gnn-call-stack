@@ -50,6 +50,12 @@ _Out = Tuple[_Array, probing.ProbesDict]
 _OutputClass = specs.OutputClass
 
 def dfs_recursive_callstack(A: _Array) -> _Out:
+
+  color = np.zeros(A.shape[0], dtype=np.int32)
+  pi = np.arange(A.shape[0])
+  d = np.zeros(A.shape[0])
+  f = np.zeros(A.shape[0])
+  time = 0
       
   def dfs_visit(u):
 
@@ -106,12 +112,6 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
           'A': np.copy(A),
           'adj': probing.graph(np.copy(A))
       })
-
-  color = np.zeros(A.shape[0], dtype=np.int32)
-  pi = np.arange(A.shape[0])
-  d = np.zeros(A.shape[0])
-  f = np.zeros(A.shape[0])
-  time = 0
 
   for s in range(A.shape[0]):
     if color[s] == 0:
