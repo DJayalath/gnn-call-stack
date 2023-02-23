@@ -32,8 +32,8 @@ import cnn_call_stack.utils as utils
 
 
 # https://abseil.io/docs/python/guides/flags
-flags.DEFINE_list('algorithms', ['dfs_nohint'], 'Which algorithms to run.')
-flags.DEFINE_list('train_lengths', ['4', '8', '16', '32', '64'],
+flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
+flags.DEFINE_list('train_lengths', ['4', '8', '16', '24', '32'],
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
 flags.DEFINE_integer('length_needle', -8,
