@@ -648,6 +648,7 @@ SAMPLERS = {
     'task_scheduling': TaskSampler,
     'dfs': DfsSampler,
     'dfs_callstack': DfsSampler,
+    'dfs_recursive_callstack': DfsSampler,
     'dfs_hard': DfsSampler,
     'dfs_nohint': DfsSampler,
     'topological_sort': TopoSampler,

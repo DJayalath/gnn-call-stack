@@ -75,6 +75,7 @@ CLRS_30_ALGS = [
     'dag_shortest_paths',
     'dfs',
     'dfs_callstack',
+    'dfs_recursive_callstack',
     'dfs_hard',
     'dfs_nohint',
     'dijkstra',
@@ -302,6 +303,18 @@ SPECS = types.MappingProxyType({
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
         'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_recursive_callstack': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+        'pi_h': (Stage.HINT, Location.NODE, Type.POINTER),
+        'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
+        'd': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'f': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
     'dfs_hard': {

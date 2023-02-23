@@ -49,6 +49,94 @@ _Array = np.ndarray
 _Out = Tuple[_Array, probing.ProbesDict]
 _OutputClass = specs.OutputClass
 
+def dfs_recursive_callstack(A: _Array) -> _Out:
+
+  chex.assert_rank(A, 2)
+  probes = probing.initialize(specs.SPECS['dfs_recursive_callstack'])
+
+  A_pos = np.arange(A.shape[0])
+
+  probing.push(
+      probes,
+      specs.Stage.INPUT,
+      next_probe={
+          'pos': np.copy(A_pos) * 1.0 / A.shape[0],
+          'A': np.copy(A),
+          'adj': probing.graph(np.copy(A))
+      })
+
+  color = np.zeros(A.shape[0], dtype=np.int32)
+  pi = np.arange(A.shape[0])
+  d = np.zeros(A.shape[0])
+  f = np.zeros(A.shape[0])
+  time = 0
+
+  for s in range(A.shape[0]):
+    if color[s] == 0:
+      probing.push(
+          probes,
+          specs.Stage.HINT,
+          next_probe={
+              'pi_h': np.copy(pi),
+              'color': probing.array_cat(color, 3),
+              'd': np.copy(d),
+              'f': np.copy(f),
+              'time': time
+          })
+      dfs_visit(s)
+      probing.push(
+              probes,
+              specs.Stage.HINT,
+              next_probe={
+                  'pi_h': np.copy(pi),
+                  'color': probing.array_cat(color, 3),
+                  'd': np.copy(d),
+                  'f': np.copy(f),
+                  'time': time
+              })
+      
+  def dfs_visit(u):
+
+    time += 0.01
+    d[u] = time
+    color[u] = 1
+
+    for v in range(A.shape[0]):
+          if A[u, v] != 0:
+            if color[v] == 0:
+              pi[v] = u
+
+              probing.push(
+                  probes,
+                  specs.Stage.HINT,
+                  next_probe={
+                      'pi_h': np.copy(pi),
+                      'color': probing.array_cat(color, 3),
+                      'd': np.copy(d),
+                      'f': np.copy(f),
+                      'time': time
+                  })
+
+              dfs_visit(v)
+
+              probing.push(
+                probes,
+                specs.Stage.HINT,
+                next_probe={
+                    'pi_h': np.copy(pi),
+                    'color': probing.array_cat(color, 3),
+                    'd': np.copy(d),
+                    'f': np.copy(f),
+                    'time': time
+              })
+
+    color[u] = 2
+    time += 0.01
+    f[u] = time
+  
+  probing.push(probes, specs.Stage.OUTPUT, next_probe={'pi': np.copy(pi)})
+  probing.finalize(probes)
+  return pi, probes
 
 def dfs(A: _Array) -> _Out:
   """Depth-first search (Moore, 1959)."""
