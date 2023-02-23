@@ -55,18 +55,12 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
   pi = np.arange(A.shape[0])
   d = np.zeros(A.shape[0])
   f = np.zeros(A.shape[0])
-  time = 0
+  time = [0]
       
   def dfs_visit(u):
 
-    global color
-    global pi
-    global d
-    global f
-    global time
-
-    time += 0.01
-    d[u] = time
+    time[0] = time[0] + 0.01
+    d[u] = time[0]
     color[u] = 1
 
     for v in range(A.shape[0]):
@@ -83,7 +77,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                       'd': np.copy(d),
                       'f': np.copy(f),
                       'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-                      'time': time
+                      'time': time[0]
                   })
 
               dfs_visit(v)
@@ -97,12 +91,12 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                     'd': np.copy(d),
                     'f': np.copy(f),
                     'stack_op': probing.mask_one(StackOp.POP.value, 3),
-                    'time': time
+                    'time': time[0]
               })
 
     color[u] = 2
-    time += 0.01
-    f[u] = time
+    time[0] = time[0] + 0.01
+    f[u] = time[0]
 
   # Main DFS algorithm
   chex.assert_rank(A, 2)
@@ -130,7 +124,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
               'd': np.copy(d),
               'f': np.copy(f),
               'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-              'time': time
+              'time': time[0]
           })
       dfs_visit(s)
       probing.push(
@@ -142,7 +136,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                   'd': np.copy(d),
                   'f': np.copy(f),
                   'stack_op': probing.mask_one(StackOp.POP.value, 3),
-                  'time': time
+                  'time': time[0]
               })
   
   probing.push(probes, specs.Stage.OUTPUT, next_probe={'pi': np.copy(pi)})
