@@ -81,6 +81,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
               'color': probing.array_cat(color, 3),
               'd': np.copy(d),
               'f': np.copy(f),
+              'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
               'time': time
           })
       dfs_visit(s)
@@ -92,6 +93,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                   'color': probing.array_cat(color, 3),
                   'd': np.copy(d),
                   'f': np.copy(f),
+                  'stack_op': probing.mask_one(StackOp.POP.value, 3),
                   'time': time
               })
       
@@ -114,6 +116,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                       'color': probing.array_cat(color, 3),
                       'd': np.copy(d),
                       'f': np.copy(f),
+                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
                       'time': time
                   })
 
@@ -127,6 +130,7 @@ def dfs_recursive_callstack(A: _Array) -> _Out:
                     'color': probing.array_cat(color, 3),
                     'd': np.copy(d),
                     'f': np.copy(f),
+                    'stack_op': probing.mask_one(StackOp.POP.value, 3),
                     'time': time
               })
 
