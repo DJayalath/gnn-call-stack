@@ -37,6 +37,7 @@ import jax
 import jax.numpy as jnp
 import optax
 
+from gnn_call_stack.callstacks import Callstack
 
 _Array = chex.Array
 _DataPoint = probing.DataPoint
@@ -153,9 +154,7 @@ class BaselineModel(model.Model):
       freeze_processor: bool = False,
       dropout_prob: float = 0.0,
       hint_teacher_forcing: float = 0.0,
-      num_hiddens_for_stack: int = 64,
-      stack_pooling_fun: str = 'max',
-      use_callstack: bool = False,
+      callstack: Callstack = None,
       hint_repred_mode: str = 'soft',
       name: str = 'base_model',
       nb_msg_passing_steps: int = 1,
@@ -245,21 +244,19 @@ class BaselineModel(model.Model):
 
     self._create_net_fns(hidden_dim=hidden_dim, encode_hints=encode_hints, processor_factory=processor_factory, use_lstm=use_lstm,
                          encoder_init=encoder_init, dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
-                         num_hiddens_for_stack=num_hiddens_for_stack, stack_pooling_fun=getattr(jnp, stack_pooling_fun), use_callstack=use_callstack,
-                         hint_repred_mode=hint_repred_mode)
+                         callstack=callstack, hint_repred_mode=hint_repred_mode)
     self._device_params = None
     self._device_opt_state = None
     self.opt_state_skeleton = None
 
   def _create_net_fns(self, hidden_dim, encode_hints, processor_factory,
                       use_lstm, encoder_init, dropout_prob,
-                      hint_teacher_forcing, num_hiddens_for_stack, stack_pooling_fun, use_callstack, hint_repred_mode):
+                      hint_teacher_forcing, callstack, hint_repred_mode):
     def _use_net(*args, **kwargs):
       return nets.Net(self._spec, hidden_dim=hidden_dim, encode_hints=encode_hints, decode_hints=self.decode_hints,
                       processor_factory=processor_factory, use_lstm=use_lstm, encoder_init=encoder_init,
                       dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
-                      num_hiddens_for_stack=num_hiddens_for_stack, stack_pooling_fun=stack_pooling_fun,
-                      use_callstack=use_callstack, hint_repred_mode=hint_repred_mode,
+                      hint_repred_mode=hint_repred_mode, callstack=callstack,
                       nb_dims=self.nb_dims, nb_msg_passing_steps=self.nb_msg_passing_steps)(*args, **kwargs)
 
     self.net_fn = hk.transform(_use_net)

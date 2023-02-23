@@ -32,7 +32,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 
-from clrs._src.algorithms.graphs import StackOp
+from gnn_call_stack.callstacks import callstack_from_name, Callstack
 
 _Array = chex.Array
 _DataPoint = probing.DataPoint
@@ -85,9 +85,7 @@ class Net(hk.Module):
       encoder_init: str,
       dropout_prob: float,
       hint_teacher_forcing: float,
-      use_callstack: bool,
-      num_hiddens_for_stack: int,
-      stack_pooling_fun: Callable,
+      callstack: Callstack,
       hint_repred_mode='soft',
       nb_dims=None,
       nb_msg_passing_steps=1,
@@ -98,9 +96,6 @@ class Net(hk.Module):
 
     self._dropout_prob = dropout_prob
     self._hint_teacher_forcing = hint_teacher_forcing
-    self.num_hiddens_for_stack = num_hiddens_for_stack
-    self.stack_pooling_fun = stack_pooling_fun
-    self.use_callstack = use_callstack
     self._hint_repred_mode = hint_repred_mode
     self.spec = spec
     self.hidden_dim = hidden_dim
@@ -109,7 +104,7 @@ class Net(hk.Module):
     self.processor_factory = processor_factory
     self.nb_dims = nb_dims
     self.use_lstm = use_lstm
-    # TODO: Introduce use_stack
+    self.callstack = callstack
     self.encoder_init = encoder_init
     self.nb_msg_passing_steps = nb_msg_passing_steps
 
@@ -173,40 +168,14 @@ class Net(hk.Module):
                 name=hint.name, location=loc, type_=typ, data=hint_data))
 
     # This is the one and only non-chunked location where one_step_pred is called.
-    if self.use_callstack:
-      top_stack = mp_state.stack.reshape(-1, mp_state.stack.shape[-1])[
-                  mp_state.stack_pointers + 1 + 3 * jnp.arange(mp_state.stack.shape[0]), :]
-    else:
-      top_stack = None
+    top_stack = self.callstack.get_top(mp_state)
 
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens,
         batch_size, nb_nodes, mp_state.lstm_state, top_stack,
         spec, encs, decs, repred)
 
-    # [batch_size, max_stack_size/num_time_steps, num_hiddens_for_stack]
-    stack = mp_state.stack
-    # [batch_size]
-    stack_pointers = mp_state.stack_pointers
-    if self.use_callstack:
-      # When num_hiddens_for_stack is set to same as hidden_dim (128), this reduces to Petar's suggestion.
-      # Otherwise, it allows the algorithm to only save a subset of stuff to the stack and use the rest of the
-      # embeddings just for predictions
-
-      # [batch_size] containing [0 (pop), 1 (noop) or 2 (push)]
-      stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
-      # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
-      new_stack_vals = self.stack_pooling_fun(hiddens[:, :, :self.num_hiddens_for_stack], axis=1)
-      # values that will actually be on top of the stack in the next round
-      # new_stack_vals = jnp.where(stack_ops[:, None] == StackOp.PUSH.value, new_stack_vals,
-      #                            stack.reshape(-1, stack.shape[-1])[stack_pointers + 3 * jnp.arange(stack.shape[0]), :])
-      # Overwrite the next stack element with the calculated one independent of the actual operation. The operation is
-      # taken into account by only moving the pointers forward where we actually pushed
-      stack = stack.reshape(-1, stack.shape[-1]).at[stack_pointers + 1 + 3 * jnp.arange(stack.shape[0]), :]\
-        .set(new_stack_vals)\
-        .reshape(mp_state.stack.shape)
-      stack_pointers = jnp.maximum(stack_pointers + stack_ops - 1, 0)
-
+    stack, stack_pointers = self.callstack.step(mp_state, hint_preds, hiddens)
     if first_step:
       output_preds = output_preds_cand
     else:
@@ -294,11 +263,7 @@ class Net(hk.Module):
 
       nb_mp_steps = max(1, hints[0].data.shape[0] - 1)
       hiddens = jnp.zeros((batch_size, nb_nodes, self.hidden_dim))
-      if self.use_callstack:
-        stack = jnp.zeros((batch_size, nb_mp_steps, self.num_hiddens_for_stack))
-        stack_pointers = jnp.zeros((batch_size, ), dtype=int)
-      else:
-        stack_pointers = stack = None
+      stack, stack_pointers = self.callstack.initial_values(batch_size, nb_mp_steps, nb_nodes)
 
       if self.use_lstm:
         lstm_state = lstm_init(batch_size * nb_nodes)
@@ -455,8 +420,7 @@ class Net(hk.Module):
     # Graph features are accumulated above by *summing* the features for every data point
     # TODO: Similarly, we can sum the top of call stack embedding to the graph_fts
     # graph_fts = graph_fts + top_stack
-    if self.use_callstack:
-      graph_fts = jnp.concatenate((graph_fts, top_stack), axis=1)
+    node_fts, edge_fts, graph_fts = self.callstack.add_to_features(top_stack, node_fts, edge_fts, graph_fts)
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nxt_hidden = hidden

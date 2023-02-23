@@ -28,8 +28,8 @@ import jax
 import numpy as np
 import requests
 import tensorflow as tf
-import cnn_call_stack.utils as utils
-
+import gnn_call_stack.utils as utils
+from gnn_call_stack.callstacks import callstack_from_name
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
@@ -125,8 +125,9 @@ flags.DEFINE_enum('stack_pooling_fun', 'max',
                   'Which pooling function to use for the node embeddings before pushing them on the stack.')
 flags.DEFINE_integer('num_hiddens_for_stack', 64,
                     'How many of the node embedding entries to use for generating the stack embedding.')
-flags.DEFINE_boolean('use_callstack', False,
-                     'Whether to use a callstack. This only works if the specification has a suitable hint called '
+
+flags.DEFINE_enum('callstack_type', 'none', ['none', 'graph_level', 'node_level'],
+                     'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
 flags.DEFINE_boolean('checkpoint_wandb', True,
                      'Whether to save the checkpoint files to weights and biases.')
@@ -380,6 +381,7 @@ def create_samplers(rng, train_lengths: List[int]):
 
 def main(unused_argv):
   global FLAGS
+  # FLAGS.use_callstack = FLAGS.callstack_type != 'none' # for backwards compatibility of logs
   FLAGS = utils.init(FLAGS)
   if FLAGS.hint_mode == 'encoded_decoded':
     encode_hints = True
@@ -426,6 +428,7 @@ def main(unused_argv):
       hint_repred_mode=FLAGS.hint_repred_mode,
       checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
+      callstack=callstack_from_name(**FLAGS.flag_values_dict())
       )
 
   eval_model = clrs.models.BaselineModel(
