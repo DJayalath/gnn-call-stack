@@ -49,6 +49,85 @@ _Array = np.ndarray
 _Out = Tuple[_Array, probing.ProbesDict]
 _OutputClass = specs.OutputClass
 
+# Recursive callstack using minimal probing features except stack
+def dfs_recursive_callstack_minimal(A: _Array) -> _Out:
+
+  color = np.zeros(A.shape[0], dtype=np.int32)
+  pi = np.arange(A.shape[0])
+  d = np.zeros(A.shape[0])
+  f = np.zeros(A.shape[0])
+  time = [0]
+      
+  def dfs_visit(u):
+
+    time[0] = time[0] + 0.01
+    d[u] = time[0]
+    color[u] = 1
+
+    for v in range(A.shape[0]):
+          if A[u, v] != 0:
+            if color[v] == 0:
+              pi[v] = u
+
+              probing.push(
+                  probes,
+                  specs.Stage.HINT,
+                  next_probe={
+                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+                      'time': time[0]
+                  })
+
+              dfs_visit(v)
+
+              probing.push(
+                probes,
+                specs.Stage.HINT,
+                next_probe={
+                    'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                    'time': time[0]
+              })
+
+    color[u] = 2
+    time[0] = time[0] + 0.01
+    f[u] = time[0]
+
+  # Main DFS algorithm
+  chex.assert_rank(A, 2)
+  probes = probing.initialize(specs.SPECS['dfs_recursive_callstack_minimal'])
+
+  A_pos = np.arange(A.shape[0])
+
+  probing.push(
+      probes,
+      specs.Stage.INPUT,
+      next_probe={
+          'pos': np.copy(A_pos) * 1.0 / A.shape[0],
+          'A': np.copy(A),
+          'adj': probing.graph(np.copy(A))
+      })
+
+  for s in range(A.shape[0]):
+    if color[s] == 0:
+      probing.push(
+          probes,
+          specs.Stage.HINT,
+          next_probe={
+              'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+              'time': time[0]
+          })
+      dfs_visit(s)
+      probing.push(
+              probes,
+              specs.Stage.HINT,
+              next_probe={
+                  'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                  'time': time[0]
+              })
+  
+  probing.push(probes, specs.Stage.OUTPUT, next_probe={'pi': np.copy(pi)})
+  probing.finalize(probes)
+  return pi, probes
+
 def dfs_recursive_callstack(A: _Array) -> _Out:
 
   color = np.zeros(A.shape[0], dtype=np.int32)

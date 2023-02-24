@@ -76,6 +76,7 @@ CLRS_30_ALGS = [
     'dfs',
     'dfs_callstack',
     'dfs_recursive_callstack',
+    'dfs_recursive_callstack_minimal',
     'dfs_recursive_callstack_hard',
     'dfs_hard',
     'dfs_nohint',
@@ -316,6 +317,14 @@ SPECS = types.MappingProxyType({
         'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
         'd': (Stage.HINT, Location.NODE, Type.SCALAR),
         'f': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_recursive_callstack_minimal': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
