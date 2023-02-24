@@ -381,7 +381,7 @@ class BaselineModel(model.Model):
   def predict(self, rng_key: hk.PRNGSequence, features: _Features,
               algorithm_index: Optional[int] = None,
               return_hints: bool = False,
-              return_all_outputs: bool = False):
+              return_all_outputs: bool = False, graphs_to_plot: int = 0, time_step: int = 0, ):
     """Model inference step."""
     if algorithm_index is None:
       assert len(self._spec) == 1

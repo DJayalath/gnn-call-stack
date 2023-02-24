@@ -33,7 +33,7 @@ from gnn_call_stack.callstacks import callstack_from_name
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
-flags.DEFINE_list('train_lengths', ['4', '8', '16', '24', '32'],
+flags.DEFINE_list('train_lengths', ['4', '8'],# '16'],# '24'],# '32'],
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
 flags.DEFINE_integer('length_needle', -8,
@@ -60,6 +60,8 @@ flags.DEFINE_integer('chunk_length', 16,
 flags.DEFINE_integer('train_steps', 10000, 'Number of training iterations.')
 flags.DEFINE_integer('eval_every', 50, 'Evaluation frequency (in steps).')
 flags.DEFINE_integer('test_every', 100, 'Evaluation frequency (in steps).')
+flags.DEFINE_integer('graphs_every', 100, 'Test graph logging frequency (in steps). Should be a multiple of test_every.')
+flags.DEFINE_integer('graphs_to_plot', 1, 'How many graphs to plot.')
 
 flags.DEFINE_integer('hidden_size', 128,
                      'Number of hidden units of the model.')
@@ -129,9 +131,9 @@ flags.DEFINE_integer('num_hiddens_for_stack', 64,
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
-flags.DEFINE_boolean('checkpoint_wandb', True,
+flags.DEFINE_boolean('checkpoint_wandb', False,
                      'Whether to save the checkpoint files to weights and biases.')
-flags.DEFINE_boolean('use_wandb', True,
+flags.DEFINE_boolean('use_wandb', False,
                      'Whether to log to weights and biases.')
 
 FLAGS = flags.FLAGS
@@ -279,6 +281,7 @@ def collect_and_eval(sampler, predict_fn, sample_count, rng_key, extras):
     outputs.append(feedback.outputs)
     new_rng_key, rng_key = jax.random.split(rng_key)
     cur_preds, _ = predict_fn(new_rng_key, feedback.features)
+    utils.GRAPHS_TO_PLOT = 0
     preds.append(cur_preds)
     processed_samples += batch_size
   outputs = _concat(outputs, axis=0)
@@ -451,6 +454,7 @@ def main(unused_argv):
   step = 0
   next_eval = 0
   next_test = 0
+  next_graphs = 0
   # Make sure scores improve on first step, but not overcome best score
   # until all algos have had at least one evaluation.
   val_scores = [-99999.9] * len(FLAGS.algorithms)
@@ -512,12 +516,17 @@ def main(unused_argv):
 
         # Validation info.
         new_rng_key, rng_key = jax.random.split(rng_key)
+        if step >= next_graphs and FLAGS.graphs_to_plot > 0:
+          next_graphs += FLAGS.graphs_every
+          utils.ITERATION = step
+          utils.GRAPHS_TO_PLOT = FLAGS.graphs_to_plot
         val_stats = collect_and_eval(
             val_samplers[algo_idx],
             functools.partial(eval_model.predict, algorithm_index=algo_idx),
             val_sample_counts[algo_idx],
             new_rng_key,
             extras=common_extras)
+        utils.GRAPHS_TO_PLOT = 0
         # logging.info('(val) algo %s step %d: %s',
         #              FLAGS.algorithms[algo_idx], step, val_stats)
         utils.log({FLAGS.algorithms[algo_idx]:

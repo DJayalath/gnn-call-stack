@@ -33,6 +33,8 @@ import jax
 import jax.numpy as jnp
 
 from gnn_call_stack.callstacks import callstack_from_name, Callstack
+from clrs._src.algorithms.graphs import StackOp
+from gnn_call_stack import utils
 
 _Array = chex.Array
 _DataPoint = probing.DataPoint
@@ -169,11 +171,10 @@ class Net(hk.Module):
 
     # This is the one and only non-chunked location where one_step_pred is called.
     top_stack = self.callstack.get_top(mp_state)
-
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens,
         batch_size, nb_nodes, mp_state.lstm_state, top_stack,
-        spec, encs, decs, repred)
+        spec, encs, decs, repred, i)
 
     stack, stack_pointers = self.callstack.step(mp_state, hint_preds, hiddens)
     if first_step:
@@ -204,7 +205,8 @@ class Net(hk.Module):
   def __call__(self, features_list: List[_Features], repred: bool,
                algorithm_index: int,
                return_hints: bool,
-               return_all_outputs: bool):
+               return_all_outputs: bool
+               ):
     """Process one batch of data.
 
     Args:
@@ -385,6 +387,7 @@ class Net(hk.Module):
       encs: Dict[str, List[hk.Module]],
       decs: Dict[str, Tuple[hk.Module]],
       repred: bool,
+      time_step: int
   ):
     """Generates one-step predictions."""
 
@@ -465,6 +468,10 @@ class Net(hk.Module):
         inf_bias_edge=self.processor.inf_bias_edge,
         repred=repred,
     )
+    if utils.GRAPHS_TO_PLOT != 0:
+      # log_graphs_fun = functools.partial(utils.log_graph)
+      jax.debug.callback(utils.log_graph, time_step=time_step, adj=adj_mat, hints=hints, hint_preds=hint_preds)
+      jax.effects_barrier()
 
     return nxt_hidden, output_preds, hint_preds, nxt_lstm_state
 
