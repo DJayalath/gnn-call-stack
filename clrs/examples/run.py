@@ -57,7 +57,7 @@ flags.DEFINE_boolean('chunked_training', False,
 flags.DEFINE_integer('chunk_length', 16,
                      'Time chunk length used for training (if '
                      '`chunked_training` is True.')
-flags.DEFINE_integer('train_steps', 10000, 'Number of training iterations.')
+flags.DEFINE_integer('train_steps', 15000, 'Number of training iterations.')
 flags.DEFINE_integer('eval_every', 50, 'Evaluation frequency (in steps).')
 flags.DEFINE_integer('test_every', 100, 'Evaluation frequency (in steps).')
 flags.DEFINE_integer('graphs_every', 100, 'Test graph logging frequency (in steps). Should be a multiple of test_every.')
@@ -127,7 +127,8 @@ flags.DEFINE_enum('stack_pooling_fun', 'max',
                   'Which pooling function to use for the node embeddings before pushing them on the stack.')
 flags.DEFINE_integer('num_hiddens_for_stack', 64,
                     'How many of the node embedding entries to use for generating the stack embedding.')
-
+flags.DEFINE_boolean('sum_fts', False,
+                     'Whether to sum top stack embedding with graph features.')
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')

@@ -76,6 +76,8 @@ CLRS_30_ALGS = [
     'dfs',
     'dfs_callstack',
     'dfs_recursive_callstack',
+    'dfs_recursive_callstack_minimal',
+    'dfs_recursive_callstack_hard',
     'dfs_hard',
     'dfs_nohint',
     'dijkstra',
@@ -300,6 +302,7 @@ SPECS = types.MappingProxyType({
         'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
         'd': (Stage.HINT, Location.NODE, Type.SCALAR),
         'f': (Stage.HINT, Location.NODE, Type.SCALAR),
+        's': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
         'u': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
@@ -315,6 +318,25 @@ SPECS = types.MappingProxyType({
         'd': (Stage.HINT, Location.NODE, Type.SCALAR),
         'f': (Stage.HINT, Location.NODE, Type.SCALAR),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_recursive_callstack_minimal': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_recursive_callstack_hard': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+        'pi_h': (Stage.HINT, Location.NODE, Type.POINTER),
+        'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
+        'd': (Stage.HINT, Location.NODE, Type.SCALAR),
+        'f': (Stage.HINT, Location.NODE, Type.SCALAR),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
     'dfs_hard': {

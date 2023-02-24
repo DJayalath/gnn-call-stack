@@ -54,10 +54,11 @@ class NoneCallstack(Callstack):
 
 class GraphLevelCallstack(Callstack):
 
-  def __init__(self, num_hiddens_for_stack: int, stack_pooling_fun: str, **kwargs):
+  def __init__(self, num_hiddens_for_stack: int, stack_pooling_fun: str, sum_fts : bool, **kwargs):
     super().__init__(**kwargs)
     self.num_hiddens_for_stack = num_hiddens_for_stack
     self.stack_pooling_fun = getattr(jnp, stack_pooling_fun)
+    self.sum_fts = sum_fts
 
   def initial_values(self, batch_size: int, num_steps: int, num_nodes: int):
     stack = jnp.zeros((batch_size, num_steps + 1, self.num_hiddens_for_stack))
@@ -95,7 +96,10 @@ class GraphLevelCallstack(Callstack):
     return stack, stack_pointers
 
   def add_to_features(self, top_stack, node_fts, edge_fts, graph_fts):
-    graph_fts = jnp.concatenate((graph_fts, top_stack), axis=-1)
+    if self.sum_fts is True:
+      graph_fts = graph_fts + top_stack
+    else:
+      graph_fts = jnp.concatenate((graph_fts, top_stack), axis=-1)
     return node_fts, edge_fts, graph_fts
 
 class NodeLevelCallstack(Callstack):
