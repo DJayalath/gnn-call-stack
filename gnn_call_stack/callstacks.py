@@ -89,7 +89,7 @@ class GraphLevelCallstackModule(CallstackModule):
         raise ValueError(
           f"Output dimension of the mlp ({output_dim}) must be equal to the stack dimension {num_hiddens_for_stack}!")
     self.sum_fts = sum_fts
-    self.print_counter = 0
+    # self.print_counter = 0
 
   def initial_values(self, batch_size: int, num_steps: int, num_nodes: int):
     stack = jnp.zeros((batch_size, num_steps + 1, self.num_hiddens_for_stack))
@@ -117,12 +117,12 @@ class GraphLevelCallstackModule(CallstackModule):
 
     if self.value_network is not None:
       hiddens = self.value_network(hiddens)
-      if self.print_counter % 1000 == 0:
-        self.print_counter = 0
-        jax.debug.print("new_stack_vals=\n{x}\n\nweights=\n{w}",
-                        x=self.value_network(jnp.ones((1, 1, 128))),
-                        w=self.value_network.layers[0].params_dict()["net/graph_level_callstack_module/~/linear/w"])
-      self.print_counter += 1
+      # if self.print_counter % 1000 == 0:
+      #   self.print_counter = 0
+      #   jax.debug.print("new_stack_vals=\n{x}\n\nweights=\n{w}",
+      #                   x=self.value_network(jnp.ones((1, 1, 128))),
+      #                   w=self.value_network.layers[0].params_dict()["net/graph_level_callstack_module/~/linear/w"])
+      # self.print_counter += 1
 
     # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
     new_stack_vals = self.stack_pooling_fun(hiddens[:, :, :self.num_hiddens_for_stack], axis=1)
@@ -145,10 +145,16 @@ class GraphLevelCallstackModule(CallstackModule):
     return node_fts, edge_fts, graph_fts
 
 class NodeLevelCallstackModule(CallstackModule):
-  # TODO support value network
-  def __init__(self, num_hiddens_for_stack: int, **kwargs):
+  def __init__(self, num_hiddens_for_stack: int, value_network: str, **kwargs):
     super().__init__(**kwargs)
     self.num_hiddens_for_stack = num_hiddens_for_stack
+    if value_network is None or value_network == "":
+      self.value_network = None
+    else:
+      self.value_network, output_dim = network_from_string(value_network)
+      if output_dim != num_hiddens_for_stack:
+        raise ValueError(
+          f"Output dimension of the mlp ({output_dim}) must be equal to the stack dimension {num_hiddens_for_stack}!")
 
   def initial_values(self, batch_size: int, num_steps: int, num_nodes: int):
     stack = jnp.zeros((batch_size, num_steps + 1, num_nodes, self.num_hiddens_for_stack))
@@ -170,6 +176,8 @@ class NodeLevelCallstackModule(CallstackModule):
     # [batch_size] containing [0 (pop), 1 (noop) or 2 (push)]
     stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
     # [batch_size, num_nodes, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
+    if self.value_network is not None:
+      hiddens = self.value_network(hiddens)
     new_stack_vals = hiddens[:, :, :, :self.num_hiddens_for_stack]
 
     # Overwrite the next stack element with the calculated one independent of the actual operation. The operation is
