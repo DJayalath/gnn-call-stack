@@ -29,7 +29,7 @@ import numpy as np
 import requests
 import tensorflow as tf
 import gnn_call_stack.utils as utils
-from gnn_call_stack.callstacks import callstack_from_name
+from gnn_call_stack.callstacks import callstack_factory_from_name
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
@@ -130,6 +130,12 @@ flags.DEFINE_boolean('sum_fts', False,
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
+flags.DEFINE_string('value_network', '128_relu_64',
+                    'Architecture of the MLP representing the value network of the callstack (e.g. 64_relu_128). '
+                    'Numbers indicate linear layers and everything else the names of activation functions defined in '
+                    'jax.nn.<function_name>. The final output dimension has to match num_hiddens for stack. If empty, '
+                    'the first  num_hiddens_for_stack entries of the hidden state (e.g. for each node or pooled '
+                    'according to stack_pooling_fun) will be taken directly.')
 flags.DEFINE_boolean('checkpoint_wandb', True,
                      'Whether to save the checkpoint files to weights and biases.')
 flags.DEFINE_boolean('use_wandb', True,
@@ -429,7 +435,7 @@ def main(unused_argv):
       hint_repred_mode=FLAGS.hint_repred_mode,
       checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
-      callstack=callstack_from_name(**unpackable_flags)
+      callstack_factory=callstack_factory_from_name(**unpackable_flags)
       )
 
   eval_model = clrs.models.BaselineModel(
