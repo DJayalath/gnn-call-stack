@@ -130,7 +130,7 @@ flags.DEFINE_boolean('sum_fts', False,
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
-flags.DEFINE_string('value_network', '128_relu_64',
+flags.DEFINE_string('value_network', '',
                     'Architecture of the MLP representing the value network of the callstack (e.g. 64_relu_128). '
                     'Numbers indicate linear layers and everything else the names of activation functions defined in '
                     'jax.nn.<function_name>. The final output dimension has to match num_hiddens for stack. If empty, '
