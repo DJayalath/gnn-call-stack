@@ -708,6 +708,7 @@ def dfs_nohint(A: _Array) -> _Out:
           probes,
           specs.Stage.HINT,
           next_probe={
+              'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
               'time': time
           })
       while True:
@@ -719,6 +720,7 @@ def dfs_nohint(A: _Array) -> _Out:
               probes,
               specs.Stage.HINT,
               next_probe={
+                  'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
                   'time': time
               })
 
@@ -734,6 +736,7 @@ def dfs_nohint(A: _Array) -> _Out:
                   probes,
                   specs.Stage.HINT,
                   next_probe={
+                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
                       'time': time
                   })
               break
@@ -747,6 +750,7 @@ def dfs_nohint(A: _Array) -> _Out:
               probes,
               specs.Stage.HINT,
               next_probe={
+                  'stack_op': probing.mask_one(StackOp.POP.value, 3),
                   'time': time
               })
 
