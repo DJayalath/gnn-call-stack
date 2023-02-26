@@ -144,6 +144,8 @@ flags.DEFINE_string('value_network', '',
                     'jax.nn.<function_name>. The final output dimension has to match num_hiddens for stack. If empty, '
                     'the first  num_hiddens_for_stack entries of the hidden state (e.g. for each node or pooled '
                     'according to stack_pooling_fun) will be taken directly.')
+flags.DEFINE_boolean('use_recurrent_state', True,
+                     'Whether to use the last node embeddings produced by the GNN of one algorithm\'s (time) step as ini')
 flags.DEFINE_boolean('checkpoint_wandb', True,
                      'Whether to save the checkpoint files to weights and biases.')
 flags.DEFINE_boolean('use_wandb', True,
@@ -450,7 +452,8 @@ def main(unused_argv):
       hint_repred_mode=FLAGS.hint_repred_mode,
       checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
-      callstack_factory=callstack_factory_from_name(**unpackable_flags)
+      callstack_factory=callstack_factory_from_name(**unpackable_flags),
+      use_recurrent_state=FLAGS.use_recurrent_state
       )
 
   eval_model = clrs.models.BaselineModel(

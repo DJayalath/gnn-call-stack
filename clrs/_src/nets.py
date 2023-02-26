@@ -86,6 +86,7 @@ class Net(hk.Module):
       dropout_prob: float,
       hint_teacher_forcing: float,
       callstack_factory: CallstackFactory,
+      use_recurrent_state: bool,
       hint_repred_mode='soft',
       nb_dims=None,
       nb_msg_passing_steps=1,
@@ -105,6 +106,7 @@ class Net(hk.Module):
     self.nb_dims = nb_dims
     self.use_lstm = use_lstm
     self.callstack_factory = callstack_factory
+    self.use_recurrent_state = use_recurrent_state
     self.encoder_init = encoder_init
     self.nb_msg_passing_steps = nb_msg_passing_steps
 
@@ -425,7 +427,7 @@ class Net(hk.Module):
     node_fts, edge_fts, graph_fts = self.callstack.add_to_features(top_stack, node_fts, edge_fts, graph_fts)
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nxt_hidden = hidden
+    nxt_hidden = hidden if self.use_recurrent_state else jnp.zeros_like(hidden)
     # These are just the message passing steps within one execution steps
     for _ in range(self.nb_msg_passing_steps):
       nxt_hidden, nxt_edge = self.processor(
