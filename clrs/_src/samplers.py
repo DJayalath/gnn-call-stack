@@ -190,30 +190,24 @@ class Sampler(abc.ABC):
     """Random string."""
     return self._rng.randint(0, high=chars, size=(length,))
 
-  def _random_tree(self, nb_nodes: int, p: float=0.5, directed=True):
+  def _random_tree(self, nb_nodes: int, p: float=0.3):
     mat = np.zeros((nb_nodes, nb_nodes))
     highest_node = 0
-    def _continue_random_tree(i: int):
-      nonlocal highest_node
-      if highest_node + 1 >= nb_nodes:
-        return
-
+    nodes_queue = collections.deque([0])
+    while nodes_queue and highest_node + 1 < nb_nodes:
+      i = nodes_queue.pop()
       mat[i, highest_node + 1] = 1
       highest_node += 1
+      nodes_queue.appendleft(highest_node)
       if highest_node + 1 < nb_nodes and self._rng.uniform() < p:
         mat[i, highest_node + 1] = 1
         highest_node += 1
-        _continue_random_tree(highest_node + 1)
-      _continue_random_tree(highest_node)
+        nodes_queue.appendleft(highest_node)
 
-    _continue_random_tree(0)
-
-    if not directed: # This might disconnect the graph
-      mat *= np.transpose(mat)
-
+    perm = np.random.permutation(mat.shape[0])
+    mat = mat[perm, :]
+    mat = mat[:, perm]
     return mat
-
-    # TODO permutation (or do they already do that?)
 
 
   def _random_er_graph(self, nb_nodes, p=0.5, directed=False, acyclic=False,
@@ -431,9 +425,9 @@ class DfsTreeSampler(Sampler):
   def _sample_data(
       self,
       length: int,
-      p: Tuple[float, ...] = (0.5,),
+      p: Tuple[float, ...] = (0.3,),
   ):
-    graph = self._
+    graph = self._random_tree(nb_nodes=length)
     return [graph]
 
 
