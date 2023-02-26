@@ -114,7 +114,7 @@ flags.DEFINE_integer('nb_triplet_fts', 8,
 flags.DEFINE_enum('encoder_init', 'xavier_on_scalars',
                   ['default', 'xavier_on_scalars'],
                   'Initialiser to use for the encoders.')
-flags.DEFINE_enum('processor_type', 'triplet_gmpnn', # baseline: triplet_gmpnn
+flags.DEFINE_enum('processor_type', 'mpnn', # baseline: triplet_gmpnn
                   ['deepsets', 'mpnn', 'pgn', 'pgn_mask',
                    'triplet_mpnn', 'triplet_pgn', 'triplet_pgn_mask',
                    'gat', 'gatv2', 'gat_full', 'gatv2_full',
