@@ -314,6 +314,7 @@ SPECS = types.MappingProxyType({
         'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
         'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
     },
     'dfs_recursive_callstack': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
