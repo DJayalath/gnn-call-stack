@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from ctypes import Union
 from typing import Callable, Tuple
 
 import jax
@@ -8,11 +9,16 @@ import jax.numpy as jnp
 import haiku as hk
 
 from typing import TYPE_CHECKING
+
+from haiku import Sequential
+
 if TYPE_CHECKING:
   from clrs._src.nets import _MessagePassingScanState
 
 
-def network_from_string(definition: str) -> Tuple[hk.Sequential, int]:
+def network_from_string(definition: str, expexted_output=None) -> Tuple[None, int] | Tuple[Sequential, int]:
+  if definition is None or definition == "" or definition.lower() == "none":
+    return None, -1
   comps = definition.split("_")
   last_dim = -1
   layers = []
@@ -25,6 +31,9 @@ def network_from_string(definition: str) -> Tuple[hk.Sequential, int]:
       layers.append(hk.Linear(last_dim, w_init=initializer, b_init=jnp.zeros))
     else:
       layers.append(getattr(jax.nn, c))
+  if expexted_output is not None and expexted_output != last_dim:
+    raise ValueError(
+      f"Output dimension of the mlp ({last_dim}) must be equal to the stack dimension {expexted_output}!")
   return hk.Sequential(layers), last_dim
 
 class CallstackModule(abc.ABC, hk.Module):
@@ -77,17 +86,24 @@ class NoneCallstackModule(CallstackModule):
 
 class GraphLevelCallstackModule(CallstackModule):
 
-  def __init__(self, num_hiddens_for_stack: int, stack_pooling_fun: str, value_network: str, sum_fts : bool, **kwargs):
+  def __init__(self, num_hiddens_for_stack: int, stack_pooling_fun: str, value_network: str, key_network: str,
+               query_network: str, sum_fts : bool, **kwargs):
     super().__init__(**kwargs)
     self.num_hiddens_for_stack = num_hiddens_for_stack
-    self.stack_pooling_fun = getattr(jnp, stack_pooling_fun)
-    if value_network is None or value_network == "":
-      self.value_network = None
+    self.value_network, _ = network_from_string(value_network, num_hiddens_for_stack)
+    self.query_network = self.key_network = None
+    if stack_pooling_fun == "attention":
+      self.key_network, key_dim = network_from_string(key_network)
+      self.query_network, _ = network_from_string(query_network, key_dim)
+      if self.query_network is None:
+        raise ValueError("Pooling via attention requires query network!")
+      if self.key_network is None:
+        if key_dim != num_hiddens_for_stack:
+          raise ValueError("No key network defined for attention and can't resort to value network as their output "
+                           "dimensions differ!")
     else:
-      self.value_network, output_dim = network_from_string(value_network)
-      if output_dim != num_hiddens_for_stack:
-        raise ValueError(
-          f"Output dimension of the mlp ({output_dim}) must be equal to the stack dimension {num_hiddens_for_stack}!")
+      self.stack_pooling_fun = getattr(jnp, stack_pooling_fun)
+
     self.sum_fts = sum_fts
     # self.print_counter = 0
 
@@ -115,8 +131,9 @@ class GraphLevelCallstackModule(CallstackModule):
     # jax.debug.print("{x}", x=hint_preds["stack_op"])
     stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
 
+    values = hiddens
     if self.value_network is not None:
-      hiddens = self.value_network(hiddens)
+      values = self.value_network(hiddens)
       # if self.print_counter % 1000 == 0:
       #   self.print_counter = 0
       #   jax.debug.print("new_stack_vals=\n{x}\n\nweights=\n{w}",
@@ -124,8 +141,13 @@ class GraphLevelCallstackModule(CallstackModule):
       #                   w=self.value_network.layers[0].params_dict()["net/graph_level_callstack_module/~/linear/w"])
       # self.print_counter += 1
 
-    # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
-    new_stack_vals = self.stack_pooling_fun(hiddens[:, :, :self.num_hiddens_for_stack], axis=1)
+    if self.query_network is None:
+      # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
+      new_stack_vals = self.stack_pooling_fun(values[:, :, :self.num_hiddens_for_stack], axis=1)
+    else:
+      query = self.query_network(hiddens)
+      key = values if self.key_network is None else self.key_network(hiddens)
+
     # values that will actually be on top of the stack in the next round
     # new_stack_vals = jnp.where(stack_ops[:, None] == StackOp.PUSH.value, new_stack_vals,
     #                            stack.reshape(-1, stack.shape[-1])[stack_pointers + 3 * jnp.arange(stack.shape[0]), :])
@@ -148,14 +170,7 @@ class NodeLevelCallstackModule(CallstackModule):
   def __init__(self, num_hiddens_for_stack: int, value_network: str, **kwargs):
     super().__init__(**kwargs)
     self.num_hiddens_for_stack = num_hiddens_for_stack
-    if value_network is None or value_network == "":
-      self.value_network = None
-    else:
-      self.value_network, output_dim = network_from_string(value_network)
-      if output_dim != num_hiddens_for_stack:
-        raise ValueError(
-          f"Output dimension of the mlp ({output_dim}) must be equal to the stack dimension {num_hiddens_for_stack}!")
-
+    self.value_network, _ = network_from_string(value_network, num_hiddens_for_stack)
   def initial_values(self, batch_size: int, num_steps: int, num_nodes: int):
     stack = jnp.zeros((batch_size, num_steps + 1, num_nodes, self.num_hiddens_for_stack))
     stack_pointers = jnp.zeros((batch_size,), dtype=int)
