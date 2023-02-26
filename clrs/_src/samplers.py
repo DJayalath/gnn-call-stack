@@ -190,6 +190,32 @@ class Sampler(abc.ABC):
     """Random string."""
     return self._rng.randint(0, high=chars, size=(length,))
 
+  def _random_tree(self, nb_nodes: int, p: float=0.5, directed=True):
+    mat = np.zeros((nb_nodes, nb_nodes))
+    highest_node = 0
+    def _continue_random_tree(i: int):
+      nonlocal highest_node
+      if highest_node + 1 >= nb_nodes:
+        return
+
+      mat[i, highest_node + 1] = 1
+      highest_node += 1
+      if highest_node + 1 < nb_nodes and self._rng.uniform() < p:
+        mat[i, highest_node + 1] = 1
+        highest_node += 1
+        _continue_random_tree(highest_node + 1)
+      _continue_random_tree(highest_node)
+
+    _continue_random_tree(0)
+
+    if not directed: # This might disconnect the graph
+      mat *= np.transpose(mat)
+
+    return mat
+
+    # TODO permutation (or do they already do that?)
+
+
   def _random_er_graph(self, nb_nodes, p=0.5, directed=False, acyclic=False,
                        weighted=False, low=0.0, high=1.0):
     """Random Erdos-Renyi graph."""
@@ -397,6 +423,17 @@ class DfsSampler(Sampler):
     graph = self._random_er_graph(
         nb_nodes=length, p=self._rng.choice(p),
         directed=True, acyclic=False, weighted=False)
+    return [graph]
+
+class DfsTreeSampler(Sampler):
+  """DFS sampler."""
+
+  def _sample_data(
+      self,
+      length: int,
+      p: Tuple[float, ...] = (0.5,),
+  ):
+    graph = self._
     return [graph]
 
 

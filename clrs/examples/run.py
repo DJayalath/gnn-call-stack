@@ -29,13 +29,19 @@ import numpy as np
 import requests
 import tensorflow as tf
 import gnn_call_stack.utils as utils
+from clrs._src import samplers
+from clrs._src.samplers import SAMPLERS
 from gnn_call_stack.callstacks import callstack_factory_from_name
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
-flags.DEFINE_list('train_lengths', ['4', '8', '16', '24', '32'],
+flags.DEFINE_list('train_lengths', ['4', '8', '16'],# '24', '32'],TODO revert
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
+flags.DEFINE_list('val_lengths', ['20'],
+                  'Which test sizes to use.')
+flags.DEFINE_list('test_lengths', ['20', '24'], #['48, 64'],
+                  'Which test sizes to use.')
 flags.DEFINE_integer('length_needle', -8,
                      'Length of needle for training and validation '
                      '(not testing) in string matching algorithms. '
@@ -130,7 +136,7 @@ flags.DEFINE_boolean('sum_fts', False,
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
-flags.DEFINE_string('value_network', '128_relu_64',
+flags.DEFINE_string('value_network', '',
                     'Architecture of the MLP representing the value network of the callstack (e.g. 64_relu_128). '
                     'Numbers indicate linear layers and everything else the names of activation functions defined in '
                     'jax.nn.<function_name>. The final output dimension has to match num_hiddens for stack. If empty, '
@@ -353,7 +359,7 @@ def create_samplers(rng, train_lengths: List[int]):
       train_sampler, _, spec = make_multi_sampler(**train_args)
 
       mult = clrs.CLRS_30_ALGS_SETTINGS[algorithm]['num_samples_multiplier']
-      val_args = dict(sizes=[np.amax(train_lengths)],
+      val_args = dict(sizes=[val_lengths],
                       split='val',
                       batch_size=32,
                       multiplier=2 * mult,
@@ -403,6 +409,13 @@ def main(unused_argv):
     raise ValueError('Hint mode not in {encoded_decoded, decoded_only, none}.')
 
   train_lengths = [int(x) for x in FLAGS.train_lengths]
+  test_lengths = [int(x) for x in FLAGS.test_lengths]
+  val_lengths = [int(x) for x in FLAGS.val_lengths]
+
+  if FLAGS.sampler != "" and FLAGS.sampler.lower() != "default":
+    sampler = getattr(samplers, FLAGS.sampler)
+    for k in samplers.SAMPLERS:
+      samplers.SAMPLERS[k] = sampler
 
   rng = np.random.RandomState(FLAGS.seed)
   rng_key = jax.random.PRNGKey(rng.randint(2**32, dtype=np.uint32))
