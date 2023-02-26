@@ -797,6 +797,7 @@ def dfs_nohint_callstack(A: _Array) -> _Out:
           specs.Stage.HINT,
           next_probe={
               'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+              'time': time
           })
       while True:
         if color[u] == 0 or d[u] == 0.0:
@@ -808,6 +809,7 @@ def dfs_nohint_callstack(A: _Array) -> _Out:
               specs.Stage.HINT,
               next_probe={
                   'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
+                  'time': time
               })
 
         for v in range(A.shape[0]):
@@ -823,6 +825,7 @@ def dfs_nohint_callstack(A: _Array) -> _Out:
                   specs.Stage.HINT,
                   next_probe={
                       'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+                      'time': time
                   })
               break
 
@@ -836,6 +839,7 @@ def dfs_nohint_callstack(A: _Array) -> _Out:
               specs.Stage.HINT,
               next_probe={
                   'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                  'time': time
               })
 
           if s_prev[u] == u:
