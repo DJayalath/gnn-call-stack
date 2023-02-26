@@ -190,6 +190,26 @@ class Sampler(abc.ABC):
     """Random string."""
     return self._rng.randint(0, high=chars, size=(length,))
 
+  def _random_tree(self, nb_nodes: int, p: float=0.3):
+    mat = np.zeros((nb_nodes, nb_nodes))
+    highest_node = 0
+    nodes_queue = collections.deque([0])
+    while nodes_queue and highest_node + 1 < nb_nodes:
+      i = nodes_queue.pop()
+      mat[i, highest_node + 1] = 1
+      highest_node += 1
+      nodes_queue.appendleft(highest_node)
+      if highest_node + 1 < nb_nodes and self._rng.uniform() < p:
+        mat[i, highest_node + 1] = 1
+        highest_node += 1
+        nodes_queue.appendleft(highest_node)
+
+    perm = np.random.permutation(mat.shape[0])
+    mat = mat[perm, :]
+    mat = mat[:, perm]
+    return mat
+
+
   def _random_er_graph(self, nb_nodes, p=0.5, directed=False, acyclic=False,
                        weighted=False, low=0.0, high=1.0):
     """Random Erdos-Renyi graph."""
@@ -397,6 +417,17 @@ class DfsSampler(Sampler):
     graph = self._random_er_graph(
         nb_nodes=length, p=self._rng.choice(p),
         directed=True, acyclic=False, weighted=False)
+    return [graph]
+
+class DfsTreeSampler(Sampler):
+  """DFS sampler."""
+
+  def _sample_data(
+      self,
+      length: int,
+      p: Tuple[float, ...] = (0.3,),
+  ):
+    graph = self._random_tree(nb_nodes=length)
     return [graph]
 
 
