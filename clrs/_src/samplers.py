@@ -679,6 +679,7 @@ SAMPLERS = {
     'task_scheduling': TaskSampler,
     'dfs': DfsSampler,
     'dfs_callstack': DfsSampler,
+    'dfs_callstack_localhints': DfsSampler,
     'dfs_nohint_callstack': DfsSampler,
     'dfs_recursive_callstack': DfsSampler,
     'dfs_recursive_callstack_minimal': DfsSampler,

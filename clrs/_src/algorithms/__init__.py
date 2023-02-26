@@ -30,6 +30,7 @@ from clrs._src.algorithms.geometry import jarvis_march
 
 from clrs._src.algorithms.graphs import dfs
 from clrs._src.algorithms.graphs import dfs_callstack
+from clrs._src.algorithms.graphs import dfs_callstack_localhints
 from clrs._src.algorithms.graphs import dfs_nohint_callstack
 from clrs._src.algorithms.graphs import dfs_recursive_callstack
 from clrs._src.algorithms.graphs import dfs_recursive_callstack_minimal

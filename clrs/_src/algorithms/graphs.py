@@ -676,6 +676,154 @@ def dfs_callstack(A: _Array) -> _Out:
 
   return pi, probes
 
+def dfs_callstack_localhints(A: _Array) -> _Out:
+  """Depth-first search (Moore, 1959)."""
+
+  # We must push:
+  # - Node to push onto stack (from pos?)
+  # - Local hints for this node (if no local hints to push, push current local hints?)
+  #   - u.d, u.f, u.pi, and the neighbour we've explored up to v
+  #   - time as global hint
+  #   - a visited list (global color)
+  # - Stack PUSH/POP/NOOP
+  # - Use POINTER types for these (may need to be a zero-dim numpy array)
+
+  chex.assert_rank(A, 2)
+  probes = probing.initialize(specs.SPECS['dfs_callstack_localhints'])
+
+  A_pos = np.arange(A.shape[0])
+
+  probing.push(
+      probes,
+      specs.Stage.INPUT,
+      next_probe={
+          'pos': np.copy(A_pos) * 1.0 / A.shape[0],
+          'A': np.copy(A),
+          'adj': probing.graph(np.copy(A))
+      })
+
+  color = np.zeros(A.shape[0], dtype=np.int32) # Visited list
+  pi = np.arange(A.shape[0])
+  d = np.zeros(A.shape[0])
+  f = np.zeros(A.shape[0])
+  s_prev = np.arange(A.shape[0])
+  time = 0
+  for s in range(A.shape[0]):
+    if color[s] == 0:
+      s_last = s
+      u = s
+      v = s
+      probing.push(
+          probes,
+          specs.Stage.HINT,
+          next_probe={
+              'color': probing.array_cat(color, 3),
+              'u_d': d[s],
+              'u_f': f[s],
+              'u_pi': pi[s],
+              'u_v': s,
+              'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
+              'time': time
+          })
+      while True:
+        if color[u] == 0 or d[u] == 0.0:
+          time += 0.01
+          d[u] = time
+          color[u] = 1
+          probing.push(
+              probes,
+              specs.Stage.HINT,
+              next_probe={
+                  # 'pi_h': np.copy(pi),
+                  # 'color': probing.array_cat(color, 3),
+                  # 'd': np.copy(d),
+                  # 'f': np.copy(f),
+                  # 's': probing.mask_one(s, A.shape[0]),
+                  # 'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
+                  # 'u': probing.mask_one(u, A.shape[0]),
+                  # 'v': probing.mask_one(v, A.shape[0]),
+                  # 'time': time
+                  'color': probing.array_cat(color, 3),
+                  'u_d': d[u],
+                  'u_f': f[u],
+                  'u_pi': pi[u],
+                  'u_v': u,
+                  'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
+                  'time': time
+              })
+
+        for v in range(A.shape[0]):
+          if A[u, v] != 0:
+            if color[v] == 0:
+              pi[v] = u
+              color[v] = 1
+              s_prev[v] = s_last
+              s_last = v
+
+              probing.push(
+                  probes,
+                  specs.Stage.HINT,
+                  next_probe={
+                      # 'pi_h': np.copy(pi),
+                      # 'color': probing.array_cat(color, 3),
+                      # 'd': np.copy(d),
+                      # 'f': np.copy(f),
+                      # 's': probing.mask_one(s, A.shape[0]),
+                      # 'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+                      # 'u': probing.mask_one(u, A.shape[0]),
+                      # 'v': probing.mask_one(v, A.shape[0]),
+                      # 'time': time
+                      'color': probing.array_cat(color, 3),
+                      'u_d': d[u],
+                      'u_f': f[u],
+                      'u_pi': pi[u],
+                      'u_v': v,
+                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
+                      'time': time
+                  })
+              break
+
+        if s_last == u:
+          color[u] = 2
+          time += 0.01
+          f[u] = time
+
+          probing.push(
+              probes,
+              specs.Stage.HINT,
+              next_probe={
+                  # 'pi_h': np.copy(pi),
+                  # 'color': probing.array_cat(color, 3),
+                  # 'd': np.copy(d),
+                  # 'f': np.copy(f),
+                  # 's': probing.mask_one(s, A.shape[0]),
+                  # 'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                  # 'u': probing.mask_one(u, A.shape[0]),
+                  # 'v': probing.mask_one(v, A.shape[0]),
+                  # 'time': time
+                  'color': probing.array_cat(color, 3),
+                  'u_d': d[u],
+                  'u_f': f[u],
+                  'u_pi': pi[u],
+                  'u_v': u,
+                  'stack_op': probing.mask_one(StackOp.POP.value, 3),
+                  'time': time
+              })
+
+          if s_prev[u] == u:
+            assert s_prev[s_last] == s_last
+            break
+          pr = s_prev[s_last]
+          s_prev[s_last] = s_last
+          s_last = pr
+
+        u = s_last
+
+  probing.push(probes, specs.Stage.OUTPUT, next_probe={'pi': np.copy(pi)})
+  probing.finalize(probes)
+
+  return pi, probes
+
 def dfs_nohint(A: _Array) -> _Out:
   """Depth-first search (Moore, 1959)."""
 
