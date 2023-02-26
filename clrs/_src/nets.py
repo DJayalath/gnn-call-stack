@@ -33,8 +33,6 @@ import jax
 import jax.numpy as jnp
 
 from gnn_call_stack.callstacks import CallstackFactory
-from gnn_call_stack.callstacks import callstack_from_name
-from clrs._src.algorithms.graphs import StackOp
 from gnn_call_stack import utils
 
 _Array = chex.Array
