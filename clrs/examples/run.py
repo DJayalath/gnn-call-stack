@@ -18,6 +18,7 @@
 import functools
 import os
 import shutil
+import warnings
 from typing import Any, Dict, List
 
 from absl import app
@@ -417,6 +418,9 @@ def main(unused_argv):
   test_lengths = [int(x) for x in FLAGS.test_lengths]
 
   if FLAGS.sampler != "" and FLAGS.sampler.lower() != "default":
+    if -1 in train_lengths or -1 in test_lengths or -1 in val_lengths:
+      warnings.warn(f"You are using the custom data sampler {FLAGS.sampler} but some of your samplers include length "
+                    f"-1 which means they come from a pre-defined dataset with possibly different distribution!")
     sampler = getattr(samplers, FLAGS.sampler)
     for k in samplers.SAMPLERS:
       samplers.SAMPLERS[k] = sampler
