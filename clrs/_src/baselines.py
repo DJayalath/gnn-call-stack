@@ -37,7 +37,7 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from gnn_call_stack.callstacks import Callstack
+from gnn_call_stack.callstacks import CallstackModule, CallstackFactory
 
 _Array = chex.Array
 _DataPoint = probing.DataPoint
@@ -154,7 +154,7 @@ class BaselineModel(model.Model):
       freeze_processor: bool = False,
       dropout_prob: float = 0.0,
       hint_teacher_forcing: float = 0.0,
-      callstack: Callstack = None,
+      callstack_factory: CallstackFactory = None,
       hint_repred_mode: str = 'soft',
       name: str = 'base_model',
       nb_msg_passing_steps: int = 1,
@@ -244,19 +244,19 @@ class BaselineModel(model.Model):
 
     self._create_net_fns(hidden_dim=hidden_dim, encode_hints=encode_hints, processor_factory=processor_factory, use_lstm=use_lstm,
                          encoder_init=encoder_init, dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
-                         callstack=callstack, hint_repred_mode=hint_repred_mode)
+                         callstack_factory=callstack_factory, hint_repred_mode=hint_repred_mode)
     self._device_params = None
     self._device_opt_state = None
     self.opt_state_skeleton = None
 
   def _create_net_fns(self, hidden_dim, encode_hints, processor_factory,
                       use_lstm, encoder_init, dropout_prob,
-                      hint_teacher_forcing, callstack, hint_repred_mode):
+                      hint_teacher_forcing, callstack_factory, hint_repred_mode):
     def _use_net(*args, **kwargs):
       return nets.Net(self._spec, hidden_dim=hidden_dim, encode_hints=encode_hints, decode_hints=self.decode_hints,
                       processor_factory=processor_factory, use_lstm=use_lstm, encoder_init=encoder_init,
                       dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
-                      hint_repred_mode=hint_repred_mode, callstack=callstack,
+                      hint_repred_mode=hint_repred_mode, callstack_factory=callstack_factory,
                       nb_dims=self.nb_dims, nb_msg_passing_steps=self.nb_msg_passing_steps)(*args, **kwargs)
 
     self.net_fn = hk.transform(_use_net)
@@ -430,6 +430,7 @@ class BaselineModel(model.Model):
     return total_loss
 
   def _update_params(self, params, grads, opt_state, algorithm_index):
+    # jax.debug.print("{x}", x=grads['net/graph_level_callstack_module/~/linear']['w'])
     updates, opt_state = filter_null_grads(
         grads, self.opt, opt_state, self.opt_state_skeleton, algorithm_index)
     if self._freeze_processor:
@@ -764,7 +765,8 @@ def filter_null_grads(grads, opt, opt_state, opt_state_skeleton, algo_idx):
     # Note: in shared pointer decoder modes, we should exclude shared params
     #       for algos that do not have pointer outputs.
     if ((processors.PROCESSOR_TAG in k) or
-        (f'algo_{algo_idx}_' in k)):
+        (f'algo_{algo_idx}_' in k) or
+        ('callstack_module' in k)):
       return v
     return jax.tree_util.tree_map(lambda x: None, v)
 

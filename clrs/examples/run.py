@@ -29,13 +29,21 @@ import numpy as np
 import requests
 import tensorflow as tf
 import gnn_call_stack.utils as utils
-from gnn_call_stack.callstacks import callstack_from_name
+from clrs._src import samplers
+from clrs._src.samplers import SAMPLERS
+from gnn_call_stack.callstacks import callstack_factory_from_name
 
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
-flags.DEFINE_list('train_lengths', ['4', '8'],# '16'],# '24'],# '32'],
+flags.DEFINE_list('train_lengths', ['4', '8', '16', '24', '32'],
                   'Which training sizes to use. A size of -1 means '
                   'use the benchmark dataset.')
+flags.DEFINE_list('val_lengths', ['32'],
+                  'Which test sizes to use.')
+flags.DEFINE_list('test_lengths', ['-1'],
+                  'Which test sizes to use.')
+flags.DEFINE_string('sampler', 'default', # DfsTreeSampler, DfsSampler
+                    'Allows to overwrite all data samplers with the given one.')
 flags.DEFINE_integer('length_needle', -8,
                      'Length of needle for training and validation '
                      '(not testing) in string matching algorithms. '
@@ -132,9 +140,15 @@ flags.DEFINE_boolean('sum_fts', False,
 flags.DEFINE_enum('callstack_type', 'graphlevel', ['none', 'graphlevel', 'nodelevel'],
                      'The type of callstack to use. This only works if the specification has a suitable hint called '
                      'stack_op.')
+flags.DEFINE_string('value_network', '',
+                    'Architecture of the MLP representing the value network of the callstack (e.g. 64_relu_128). '
+                    'Numbers indicate linear layers and everything else the names of activation functions defined in '
+                    'jax.nn.<function_name>. The final output dimension has to match num_hiddens for stack. If empty, '
+                    'the first  num_hiddens_for_stack entries of the hidden state (e.g. for each node or pooled '
+                    'according to stack_pooling_fun) will be taken directly.')
 flags.DEFINE_boolean('checkpoint_wandb', False,
                      'Whether to save the checkpoint files to weights and biases.')
-flags.DEFINE_boolean('use_wandb', False,
+flags.DEFINE_boolean('use_wandb', True,
                      'Whether to log to weights and biases.')
 
 FLAGS = flags.FLAGS
@@ -293,7 +307,7 @@ def collect_and_eval(sampler, predict_fn, sample_count, rng_key, extras):
   return {k: unpack(v) for k, v in out.items()}
 
 
-def create_samplers(rng, train_lengths: List[int]):
+def create_samplers(rng, train_lengths: List[int], val_lengths: List[int], test_lengths: List[int]):
   """Create all the samplers."""
   train_samplers = []
   val_samplers = []
@@ -350,7 +364,7 @@ def create_samplers(rng, train_lengths: List[int]):
       train_sampler, _, spec = make_multi_sampler(**train_args)
 
       mult = clrs.CLRS_30_ALGS_SETTINGS[algorithm]['num_samples_multiplier']
-      val_args = dict(sizes=[np.amax(train_lengths)],
+      val_args = dict(sizes=val_lengths,
                       split='val',
                       batch_size=32,
                       multiplier=2 * mult,
@@ -360,7 +374,7 @@ def create_samplers(rng, train_lengths: List[int]):
                       **common_sampler_args)
       val_sampler, val_samples, spec = make_multi_sampler(**val_args)
 
-      test_args = dict(sizes=[-1],
+      test_args = dict(sizes=test_lengths,
                        split='test',
                        batch_size=32,
                        multiplier=2 * mult,
@@ -400,6 +414,13 @@ def main(unused_argv):
     raise ValueError('Hint mode not in {encoded_decoded, decoded_only, none}.')
 
   train_lengths = [int(x) for x in FLAGS.train_lengths]
+  val_lengths = [int(x) for x in FLAGS.val_lengths]
+  test_lengths = [int(x) for x in FLAGS.test_lengths]
+
+  if FLAGS.sampler != "" and FLAGS.sampler.lower() != "default":
+    sampler = getattr(samplers, FLAGS.sampler)
+    for k in samplers.SAMPLERS:
+      samplers.SAMPLERS[k] = sampler
 
   rng = np.random.RandomState(FLAGS.seed)
   rng_key = jax.random.PRNGKey(rng.randint(2**32, dtype=np.uint32))
@@ -408,7 +429,7 @@ def main(unused_argv):
   (train_samplers,
    val_samplers, val_sample_counts,
    test_samplers, test_sample_counts,
-   spec_list) = create_samplers(rng, train_lengths)
+   spec_list) = create_samplers(rng, train_lengths, val_lengths, test_lengths)
 
   processor_factory = clrs.get_processor_factory(
       FLAGS.processor_type,
@@ -432,7 +453,7 @@ def main(unused_argv):
       hint_repred_mode=FLAGS.hint_repred_mode,
       checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
-      callstack=callstack_from_name(**unpackable_flags)
+      callstack_factory=callstack_factory_from_name(**unpackable_flags)
       )
 
   eval_model = clrs.models.BaselineModel(

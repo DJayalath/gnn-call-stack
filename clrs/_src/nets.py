@@ -32,7 +32,8 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 
-from gnn_call_stack.callstacks import callstack_from_name, Callstack
+from gnn_call_stack.callstacks import CallstackFactory
+from gnn_call_stack.callstacks import callstack_from_name
 from clrs._src.algorithms.graphs import StackOp
 from gnn_call_stack import utils
 
@@ -87,7 +88,7 @@ class Net(hk.Module):
       encoder_init: str,
       dropout_prob: float,
       hint_teacher_forcing: float,
-      callstack: Callstack,
+      callstack_factory: CallstackFactory,
       hint_repred_mode='soft',
       nb_dims=None,
       nb_msg_passing_steps=1,
@@ -106,7 +107,7 @@ class Net(hk.Module):
     self.processor_factory = processor_factory
     self.nb_dims = nb_dims
     self.use_lstm = use_lstm
-    self.callstack = callstack
+    self.callstack_factory = callstack_factory
     self.encoder_init = encoder_init
     self.nb_msg_passing_steps = nb_msg_passing_steps
 
@@ -153,6 +154,8 @@ class Net(hk.Module):
       for hint in hints:
         hint_data = jnp.asarray(hint.data)[i]
         _, loc, typ = spec[hint.name]
+        # if hint.name == "stack_op":
+        #   jax.debug.print("{x}", x=hint.data)
         if needs_noise:
           if (typ == _Type.POINTER and
               decoded_hint[hint.name].type_ == _Type.SOFT_POINTER):
@@ -169,14 +172,14 @@ class Net(hk.Module):
             probing.DataPoint(
                 name=hint.name, location=loc, type_=typ, data=hint_data))
 
-    # This is the one and only non-chunked location where one_step_pred is called.
     top_stack = self.callstack.get_top(mp_state)
+    # This is the one and only non-chunked location where one_step_pred is called.
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens,
         batch_size, nb_nodes, mp_state.lstm_state, top_stack,
         spec, encs, decs, repred, i)
 
-    stack, stack_pointers = self.callstack.step(mp_state, hint_preds, hiddens)
+    stack, stack_pointers = self.callstack(mp_state, hint_preds, hiddens)
     if first_step:
       output_preds = output_preds_cand
     else:
@@ -205,8 +208,7 @@ class Net(hk.Module):
   def __call__(self, features_list: List[_Features], repred: bool,
                algorithm_index: int,
                return_hints: bool,
-               return_all_outputs: bool
-               ):
+               return_all_outputs: bool):
     """Process one batch of data.
 
     Args:
@@ -243,6 +245,7 @@ class Net(hk.Module):
 
     self.encoders, self.decoders = self._construct_encoders_decoders()
     self.processor = self.processor_factory(self.hidden_dim)
+    self.callstack = self.callstack_factory()
 
     # Optionally construct LSTM.
     if self.use_lstm:

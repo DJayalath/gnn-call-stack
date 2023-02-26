@@ -75,6 +75,7 @@ CLRS_30_ALGS = [
     'dag_shortest_paths',
     'dfs',
     'dfs_callstack',
+    'dfs_nohint_callstack',
     'dfs_recursive_callstack',
     'dfs_recursive_callstack_minimal',
     'dfs_recursive_callstack_hard',
@@ -308,6 +309,13 @@ SPECS = types.MappingProxyType({
         'v': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
+    'dfs_nohint_callstack': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+    },
     'dfs_recursive_callstack': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
@@ -356,8 +364,9 @@ SPECS = types.MappingProxyType({
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
         'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
-        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
-        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER)
     },
     'topological_sort': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
