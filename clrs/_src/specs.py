@@ -159,6 +159,12 @@ SPECS = types.MappingProxyType({
         'i': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'j': (Stage.HINT, Location.NODE, Type.MASK_ONE)
     },
+    # 'quicksort_local': {
+    #     'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+    #     'key': (Stage.INPUT, Location.NODE, Type.SCALAR),
+    #     'pred': (Stage.OUTPUT, Location.NODE, Type.SHOULD_BE_PERMUTATION),
+    #     'u_pred': (),
+    # },
     'quickselect': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'key': (Stage.INPUT, Location.NODE, Type.SCALAR),
@@ -316,6 +322,7 @@ SPECS = types.MappingProxyType({
         'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
         'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
         'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
+        'u': (Stage.HINT, Location.GRAPH, Type.POINTER),
         'u_d': (Stage.HINT, Location.GRAPH, Type.SCALAR),
         'u_f': (Stage.HINT, Location.GRAPH, Type.SCALAR),
         'u_pi': (Stage.HINT, Location.GRAPH, Type.POINTER),

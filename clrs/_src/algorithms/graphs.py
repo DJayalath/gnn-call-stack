@@ -718,6 +718,7 @@ def dfs_callstack_localhints(A: _Array) -> _Out:
           specs.Stage.HINT,
           next_probe={
               'color': probing.array_cat(color, 3),
+              'u': s,
               'u_d': d[s],
               'u_f': f[s],
               'u_pi': pi[s],
@@ -744,6 +745,7 @@ def dfs_callstack_localhints(A: _Array) -> _Out:
                   # 'v': probing.mask_one(v, A.shape[0]),
                   # 'time': time
                   'color': probing.array_cat(color, 3),
+                  'u': u,
                   'u_d': d[u],
                   'u_f': f[u],
                   'u_pi': pi[u],
@@ -774,6 +776,7 @@ def dfs_callstack_localhints(A: _Array) -> _Out:
                       # 'v': probing.mask_one(v, A.shape[0]),
                       # 'time': time
                       'color': probing.array_cat(color, 3),
+                      'u': u,
                       'u_d': d[u],
                       'u_f': f[u],
                       'u_pi': pi[u],
@@ -802,6 +805,7 @@ def dfs_callstack_localhints(A: _Array) -> _Out:
                   # 'v': probing.mask_one(v, A.shape[0]),
                   # 'time': time
                   'color': probing.array_cat(color, 3),
+                  'u': u,
                   'u_d': d[u],
                   'u_f': f[u],
                   'u_pi': pi[u],
