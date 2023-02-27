@@ -430,6 +430,22 @@ class DfsTreeSampler(Sampler):
     graph = self._random_tree(nb_nodes=length)
     return [graph]
 
+class DfsMixedTreeSampler(Sampler):
+  """DFS sampler."""
+
+  def _sample_data(
+      self,
+      length: int,
+      p: Tuple[float, ...] = (0.3,),
+      tree_prob=0.15
+  ):
+    if self._rng.uniform() < tree_prob:
+      graph = self._random_tree(nb_nodes=length)
+    else:
+      graph = self._random_er_graph(nb_nodes=length, p=self._rng.choice(p),
+                                    directed=True, acyclic=False, weighted=False)
+    return [graph]
+
 
 class BfsSampler(Sampler):
   """BFS sampler."""
