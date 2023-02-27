@@ -202,6 +202,7 @@ class Net(hk.Module):
         hint_preds=hint_preds if return_hints else None,
         output_preds=output_preds if return_all_outputs else None,
         hiddens=None, lstm_state=None, stack=None, stack_pointers=None)
+    # jax.debug.print("{x}", x=output_preds["pi"])
 
     # Complying to jax.scan, the first returned value is the state we carry over
     # the second value is the output that will be stacked over steps.
@@ -492,7 +493,8 @@ class Net(hk.Module):
       else:
         output_preds[out_name] = output_preds_prev[out_name]
       # hint_preds[val_name]: [batch_size, num_nodes] (graph-level node pointer)
-      output_preds[out_name].at[jnp.arange(batch_size), cur_index, :].set(hint_preds[val_name])
+      output_preds[out_name] = output_preds[out_name].at[jnp.arange(batch_size), cur_index, :].set(hint_preds[val_name])
+      # jax.debug.print("cur_index=\n{cur_index}\n\nhint_preds[val_name]=\n{hint_preds}\n\n", cur_index=cur_index, hint_preds=hint_preds[val_name])
 
     return nxt_hidden, output_preds, hint_preds, nxt_lstm_state
 
