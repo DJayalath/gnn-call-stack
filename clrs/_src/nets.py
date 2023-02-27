@@ -87,6 +87,7 @@ class Net(hk.Module):
       hint_teacher_forcing: float,
       callstack_factory: CallstackFactory,
       use_recurrent_state: bool,
+      hints_to_output: List[Tuple[str]],
       hint_repred_mode='soft',
       nb_dims=None,
       nb_msg_passing_steps=1,
@@ -107,6 +108,8 @@ class Net(hk.Module):
     self.use_lstm = use_lstm
     self.callstack_factory = callstack_factory
     self.use_recurrent_state = use_recurrent_state
+    self.hints_to_output = hints_to_output
+    self.dec_exculded_names = [out_name for _, out_name, _ in hints_to_output]
     self.encoder_init = encoder_init
     self.nb_msg_passing_steps = nb_msg_passing_steps
 
@@ -174,7 +177,7 @@ class Net(hk.Module):
     top_stack = self.callstack.get_top(mp_state)
     # This is the one and only non-chunked location where one_step_pred is called.
     hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
-        inputs, cur_hint, mp_state.hiddens,
+        inputs, cur_hint, mp_state.hiddens, mp_state.output_preds,
         batch_size, nb_nodes, mp_state.lstm_state, top_stack,
         spec, encs, decs, repred)
 
@@ -350,6 +353,8 @@ class Net(hk.Module):
       enc = {}
       dec = {}
       for name, (stage, loc, t) in spec.items():
+        if name in self.dec_exculded_names:
+          continue
         if stage == _Stage.INPUT or (
             stage == _Stage.HINT and self.encode_hints):
           # Build input encoders.
@@ -381,6 +386,7 @@ class Net(hk.Module):
       inputs: _Trajectory,
       hints: _Trajectory,
       hidden: _Array,
+      output_preds_prev: _Array,
       batch_size: int,
       nb_nodes: int,
       lstm_state: Optional[hk.LSTMState],
@@ -391,6 +397,8 @@ class Net(hk.Module):
       repred: bool,
   ):
     """Generates one-step predictions."""
+    if not self.use_recurrent_state:
+      hidden = jnp.zeros_like(hidden)
 
     # Initialise empty node/edge/graph features and adjacency matrix.
     node_fts = jnp.zeros((batch_size, nb_nodes, self.hidden_dim))
@@ -427,7 +435,7 @@ class Net(hk.Module):
     node_fts, edge_fts, graph_fts = self.callstack.add_to_features(top_stack, node_fts, edge_fts, graph_fts)
 
     # PROCESS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nxt_hidden = hidden if self.use_recurrent_state else jnp.zeros_like(hidden)
+    nxt_hidden = hidden
     # These are just the message passing steps within one execution steps
     for _ in range(self.nb_msg_passing_steps):
       nxt_hidden, nxt_edge = self.processor(
@@ -450,7 +458,10 @@ class Net(hk.Module):
     else:
       nxt_lstm_state = None
 
-    h_t = jnp.concatenate([node_fts, hidden, nxt_hidden], axis=-1)
+    if self.use_recurrent_state:
+      h_t = jnp.concatenate([node_fts, hidden, nxt_hidden], axis=-1)
+    else:
+      h_t = jnp.concatenate([node_fts, nxt_hidden], axis=-1)
     if nxt_edge is not None:
       e_t = jnp.concatenate([edge_fts, nxt_edge], axis=-1)
     else:
@@ -469,6 +480,19 @@ class Net(hk.Module):
         inf_bias_edge=self.processor.inf_bias_edge,
         repred=repred,
     )
+
+    for val_name, out_name, index_name in self.hints_to_output:
+      # we assume that hint_preds[index_name] is a graph-level soft node pointer of dimension [batch_size, num_nodes]
+      cur_index = jnp.argmax(hint_preds[index_name], axis=-1)  # [batch_size]
+
+      # output_preds[out_name]: [batch_size, num_nodes, num_nodes] (node_level node pointer)
+      if output_preds_prev is None:
+        # nb_names[0] assuming we only use one algorithm
+        output_preds[out_name] = jnp.zeros((batch_size, nb_nodes, nb_nodes))
+      else:
+        output_preds[out_name] = output_preds_prev[out_name]
+      # hint_preds[val_name]: [batch_size, num_nodes] (graph-level node pointer)
+      output_preds[out_name].at[jnp.arange(batch_size), cur_index, :].set(hint_preds[val_name])
 
     return nxt_hidden, output_preds, hint_preds, nxt_lstm_state
 

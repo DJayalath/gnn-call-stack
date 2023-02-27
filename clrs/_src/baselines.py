@@ -156,6 +156,7 @@ class BaselineModel(model.Model):
       hint_teacher_forcing: float = 0.0,
       callstack_factory: CallstackFactory = None,
       use_recurrent_state: bool = True,
+      hints_to_output: dict = {},
       hint_repred_mode: str = 'soft',
       name: str = 'base_model',
       nb_msg_passing_steps: int = 1,
@@ -245,20 +246,22 @@ class BaselineModel(model.Model):
 
     self._create_net_fns(hidden_dim=hidden_dim, encode_hints=encode_hints, processor_factory=processor_factory, use_lstm=use_lstm,
                          encoder_init=encoder_init, dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
-                         callstack_factory=callstack_factory, use_recurrent_state=use_recurrent_state, hint_repred_mode=hint_repred_mode)
+                         callstack_factory=callstack_factory, use_recurrent_state=use_recurrent_state,
+                         hints_to_output=hints_to_output, hint_repred_mode=hint_repred_mode)
     self._device_params = None
     self._device_opt_state = None
     self.opt_state_skeleton = None
 
   def _create_net_fns(self, hidden_dim, encode_hints, processor_factory,
                       use_lstm, encoder_init, dropout_prob,
-                      hint_teacher_forcing, callstack_factory, use_recurrent_state, hint_repred_mode):
+                      hint_teacher_forcing, callstack_factory, use_recurrent_state, hints_to_output, hint_repred_mode):
     def _use_net(*args, **kwargs):
       return nets.Net(self._spec, hidden_dim=hidden_dim, encode_hints=encode_hints, decode_hints=self.decode_hints,
                       processor_factory=processor_factory, use_lstm=use_lstm, encoder_init=encoder_init,
                       dropout_prob=dropout_prob, hint_teacher_forcing=hint_teacher_forcing,
                       hint_repred_mode=hint_repred_mode, callstack_factory=callstack_factory,
-                      use_recurrent_state=use_recurrent_state, nb_dims=self.nb_dims, nb_msg_passing_steps=self.nb_msg_passing_steps)(*args, **kwargs)
+                      use_recurrent_state=use_recurrent_state, hints_to_output=hints_to_output,
+                      nb_dims=self.nb_dims, nb_msg_passing_steps=self.nb_msg_passing_steps)(*args, **kwargs)
 
     self.net_fn = hk.transform(_use_net)
     pmap_args = dict(axis_name='batch', devices=jax.local_devices())

@@ -15,6 +15,7 @@
 
 """Run training of one or more algorithmic tasks from CLRS."""
 
+import re
 import functools
 import os
 import shutil
@@ -37,7 +38,7 @@ from gnn_call_stack.callstacks import callstack_factory_from_name
 # https://abseil.io/docs/python/guides/flags
 flags.DEFINE_list('algorithms', ['dfs_callstack'], 'Which algorithms to run.')
 flags.DEFINE_list('train_lengths', ['4', '8', '16', '24', '32'],
-                  'Which training sizes to use. A size of -1 means '
+                  'Which training sizes to use. A size of -1 means using the predefined one.'
                   'use the benchmark dataset.')
 flags.DEFINE_list('val_lengths', ['32'],
                   'Which test sizes to use.')
@@ -147,6 +148,11 @@ flags.DEFINE_string('value_network', '',
                     'according to stack_pooling_fun) will be taken directly.')
 flags.DEFINE_boolean('use_recurrent_state', True,
                      'Whether to use the last node embeddings produced by the GNN of one algorithm\'s (time) step as ini')
+flags.DEFINE_list('hints_to_output', [], # u_pi->pi[u]
+                  'A list of assignments a->b[c] where <c> and <a> are expected to be graph-level node pointers. '
+                  'They will be used to produce a node-level node-pointer output <b> by overwriting '
+                  'the value of <b> at the position predicted by <c> with the value predicted in <a> in every time '
+                  'step.')
 flags.DEFINE_boolean('checkpoint_wandb', True,
                      'Whether to save the checkpoint files to weights and biases.')
 flags.DEFINE_boolean('use_wandb', True,
@@ -186,8 +192,10 @@ def _maybe_download_dataset(dataset_path):
   """Download CLRS30 dataset if needed."""
   dataset_folder = os.path.join(dataset_path, clrs.get_clrs_folder())
   if os.path.isdir(dataset_folder):
-    logging.info('Dataset found at %s. Skipping download.', dataset_folder)
-    return dataset_folder
+    # logging.info('Dataset found at %s. Skipping download.', dataset_folder)
+    # return dataset_folder
+    logging.info('Dataset found at %s. Deleting and re-generating to be sure distribution is correct.', dataset_folder)
+    shutil.rmtree(dataset_path)
   logging.info('Dataset not found in %s. Downloading...', dataset_folder)
 
   clrs_url = clrs.get_dataset_gcp_url()
@@ -440,6 +448,11 @@ def main(unused_argv):
       nb_triplet_fts=FLAGS.nb_triplet_fts,
       nb_heads=FLAGS.nb_heads
   )
+  def process_hint_to_output(spec: str):
+    res = re.match("(.+)->(.+)\\[(.+)\\]", spec)
+    if not res:
+      raise ValueError(f"Hint to output specification {spec} does not match pattern a->b[c]!")
+    return res.group(1), res.group(2), res.group(3)
   model_params = dict(
       processor_factory=processor_factory,
       hidden_dim=FLAGS.hidden_size,
@@ -457,7 +470,8 @@ def main(unused_argv):
       checkpoint_wandb=FLAGS.checkpoint_wandb,
       nb_msg_passing_steps=FLAGS.nb_msg_passing_steps,
       callstack_factory=callstack_factory_from_name(**unpackable_flags),
-      use_recurrent_state=FLAGS.use_recurrent_state
+      use_recurrent_state=FLAGS.use_recurrent_state,
+      hints_to_output=[process_hint_to_output(h2o) for h2o in FLAGS.hints_to_output]
       )
 
   eval_model = clrs.models.BaselineModel(
