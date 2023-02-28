@@ -148,8 +148,8 @@ flags.DEFINE_string('value_network', '',
                     'according to stack_pooling_fun) will be taken directly.')
 flags.DEFINE_boolean('use_recurrent_state', True,
                      'Whether to use the last node embeddings produced by the GNN of one algorithm\'s (time) step as ini')
-flags.DEFINE_list('hints_to_output', [], # u_pi->pi[u]
-                  'A list of assignments a->b[c] where <c> and <a> are expected to be graph-level node pointers. '
+flags.DEFINE_list('hints_to_output', [], # u_pi-pi[u]
+                  'A list of assignments a-b[c] (read: a->b[c]) where <c> and <a> are expected to be graph-level node pointers. '
                   'They will be used to produce a node-level node-pointer output <b> by overwriting '
                   'the value of <b> at the position predicted by <c> with the value predicted in <a> in every time '
                   'step.')
@@ -449,9 +449,9 @@ def main(unused_argv):
       nb_heads=FLAGS.nb_heads
   )
   def process_hint_to_output(spec: str):
-    res = re.match("(.+)->(.+)\\[(.+)\\]", spec)
+    res = re.match("(.+)-(.+)\\[(.+)\\]", spec)
     if not res:
-      raise ValueError(f"Hint to output specification {spec} does not match pattern a->b[c]!")
+      raise ValueError(f"Hint to output specification {spec} does not match pattern a-b[c]!")
     return res.group(1), res.group(2), res.group(3)
   model_params = dict(
       processor_factory=processor_factory,
