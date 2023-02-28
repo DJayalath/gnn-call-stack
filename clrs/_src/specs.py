@@ -385,8 +385,6 @@ SPECS = types.MappingProxyType({
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
         'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
-        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
-        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR),
         'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER)
     },
     'topological_sort': {

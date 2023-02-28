@@ -859,10 +859,7 @@ def dfs_nohint(A: _Array) -> _Out:
       probing.push(
           probes,
           specs.Stage.HINT,
-          next_probe={
-              'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-              'time': time
-          })
+          next_probe={})
       while True:
         if color[u] == 0 or d[u] == 0.0:
           time += 0.01
@@ -871,10 +868,7 @@ def dfs_nohint(A: _Array) -> _Out:
           probing.push(
               probes,
               specs.Stage.HINT,
-              next_probe={
-                  'stack_op': probing.mask_one(StackOp.NOOP.value, 3),
-                  'time': time
-              })
+              next_probe={})
 
         for v in range(A.shape[0]):
           if A[u, v] != 0:
@@ -887,10 +881,7 @@ def dfs_nohint(A: _Array) -> _Out:
               probing.push(
                   probes,
                   specs.Stage.HINT,
-                  next_probe={
-                      'stack_op': probing.mask_one(StackOp.PUSH.value, 3),
-                      'time': time
-                  })
+                  next_probe={})
               break
 
         if s_last == u:
@@ -901,10 +892,7 @@ def dfs_nohint(A: _Array) -> _Out:
           probing.push(
               probes,
               specs.Stage.HINT,
-              next_probe={
-                  'stack_op': probing.mask_one(StackOp.POP.value, 3),
-                  'time': time
-              })
+              next_probe={})
 
           if s_prev[u] == u:
             assert s_prev[s_last] == s_last
