@@ -130,9 +130,11 @@ flags.DEFINE_string('dataset_path', '/tmp/CLRS30',
                     'Path in which dataset is stored.')
 flags.DEFINE_boolean('freeze_processor', False,
                      'Whether to freeze the processor of the model.')
-flags.DEFINE_enum('stack_pooling_fun', 'max',
-                  ['max', 'min', 'mean', 'sum'],
-                  'Which pooling function to use for the node embeddings before pushing them on the stack.')
+flags.DEFINE_string('stack_pooling_fun', 'max', # ['max', 'min', 'mean', 'sum']
+                  'Which pooling function to use for the node embeddings before pushing them on the stack. Can also '
+                  'be a network specification as for value_network which ends in one dimension. In this case, the '
+                  'given network will be applied to the hidden dimension, followed by a softmax to determine attention '
+                  'weights for the different nodes.')
 flags.DEFINE_integer('num_hiddens_for_stack', 64,
                     'How many of the node embedding entries to use for generating the stack embedding.')
 flags.DEFINE_boolean('sum_fts', False,

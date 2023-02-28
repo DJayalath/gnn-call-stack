@@ -176,12 +176,11 @@ class Net(hk.Module):
 
     top_stack = self.callstack.get_top(mp_state)
     # This is the one and only non-chunked location where one_step_pred is called.
-    hiddens, output_preds_cand, hint_preds, lstm_state = self._one_step_pred(
+    hiddens, output_preds_cand, hint_preds, lstm_state, stack, stack_pointers = self._one_step_pred(
         inputs, cur_hint, mp_state.hiddens, mp_state.output_preds,
-        batch_size, nb_nodes, mp_state.lstm_state, top_stack,
+        batch_size, nb_nodes, mp_state.lstm_state, top_stack, mp_state.stack, mp_state.stack_pointers,
         spec, encs, decs, repred)
 
-    stack, stack_pointers = self.callstack(mp_state, hint_preds, hiddens)
     if first_step:
       output_preds = output_preds_cand
     else:
@@ -392,6 +391,8 @@ class Net(hk.Module):
       nb_nodes: int,
       lstm_state: Optional[hk.LSTMState],
       top_stack: Optional[_Array],
+      stack: Optional[_Array],
+      stack_pointers: Optional[_Array],
       spec: _Spec,
       encs: Dict[str, List[hk.Module]],
       decs: Dict[str, Tuple[hk.Module]],
@@ -496,7 +497,8 @@ class Net(hk.Module):
       output_preds[out_name] = output_preds[out_name].at[jnp.arange(batch_size), cur_index, :].set(hint_preds[val_name])
       # jax.debug.print("cur_index=\n{cur_index}\n\nhint_preds[val_name]=\n{hint_preds}\n\n", cur_index=cur_index, hint_preds=hint_preds[val_name])
 
-    return nxt_hidden, output_preds, hint_preds, nxt_lstm_state
+    stack, stack_pointers = self.callstack(stack, stack_pointers, hint_preds, nxt_hidden, graph_fts)
+    return nxt_hidden, output_preds, hint_preds, nxt_lstm_state, stack, stack_pointers
 
 
 class NetChunked(Net):

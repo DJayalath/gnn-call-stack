@@ -46,7 +46,7 @@ class CallstackModule(abc.ABC, hk.Module):
     pass
 
   @abc.abstractmethod
-  def __call__(self, mp_state: _MessagePassingScanState, hint_preds, hiddens):
+  def __call__(self, stack, stack_pointers, hint_preds, hiddens, graph_fts):
     pass
 
   @abc.abstractmethod
@@ -62,7 +62,7 @@ class NoneCallstackModule(CallstackModule):
     return None, None
   def get_top(self, mp_state: _MessagePassingScanState):
     return None
-  def __call__(self, mp_state, hint_preds, hiddens):
+  def __call__(self, stack, stack_pointers, hint_preds, hiddens, graph_fts):
     return None, None
   def add_to_features(self, top_stack, node_fts, edge_fts, graph_fts):
     """
@@ -80,7 +80,13 @@ class GraphLevelCallstackModule(CallstackModule):
   def __init__(self, num_hiddens_for_stack: int, stack_pooling_fun: str, value_network: str, sum_fts : bool, **kwargs):
     super().__init__(**kwargs)
     self.num_hiddens_for_stack = num_hiddens_for_stack
-    self.stack_pooling_fun = getattr(jnp, stack_pooling_fun)
+    if hasattr(jnp, stack_pooling_fun):
+      self.stack_pooling_fun = getattr(jnp, stack_pooling_fun)
+    else:
+      self.stack_pooling_fun = None
+      self.att_net, out_dim = network_from_string(stack_pooling_fun)
+      if out_dim != 1:
+        raise ValueError(f"Output dimension of attention network {stack_pooling_fun} is {out_dim}, not 1.")
     if value_network is None or value_network == "":
       self.value_network = None
     else:
@@ -101,12 +107,12 @@ class GraphLevelCallstackModule(CallstackModule):
     stack, stack_pointers = mp_state.stack, mp_state.stack_pointers
     return stack.reshape(-1, stack.shape[-1])[stack_pointers + stack.shape[1] * jnp.arange(stack.shape[0]), :]
 
-  def __call__(self, mp_state: _MessagePassingScanState, hint_preds, hiddens):
-    # [batch_size, max_stack_size/num_time_steps, num_hiddens_for_stack]
-    stack = mp_state.stack
-    # [batch_size]
-    stack_pointers = mp_state.stack_pointers
-
+  def __call__(self, stack, stack_pointers, hint_preds, hiddens, graph_fts):
+    """
+    stack: [batch_size, max_stack_size/num_time_steps, num_hiddens_for_stack]
+    stack_pointers: [batch_size]
+    hiddens: [batch_size, num_nodes, hidden_dim]
+    """
     # When num_hiddens_for_stack is set to same as hidden_dim (128), this reduces to Petar's suggestion.
     # Otherwise, it allows the algorithm to only save a subset of stuff to the stack and use the rest of the
     # embeddings just for predictions
@@ -115,8 +121,9 @@ class GraphLevelCallstackModule(CallstackModule):
     # jax.debug.print("{x}", x=hint_preds["stack_op"])
     stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
 
+    values = hiddens[:, :, :self.num_hiddens_for_stack]
     if self.value_network is not None:
-      hiddens = self.value_network(hiddens)
+      values = self.value_network(hiddens)
       # if self.print_counter % 1000 == 0:
       #   self.print_counter = 0
       #   jax.debug.print("new_stack_vals=\n{x}\n\nweights=\n{w}",
@@ -124,8 +131,15 @@ class GraphLevelCallstackModule(CallstackModule):
       #                   w=self.value_network.layers[0].params_dict()["net/graph_level_callstack_module/~/linear/w"])
       # self.print_counter += 1
 
-    # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
-    new_stack_vals = self.stack_pooling_fun(hiddens[:, :, :self.num_hiddens_for_stack], axis=1)
+    if self.stack_pooling_fun is None:
+      # turn [batch_size, dim] into [batch_size, num_nodes, dim]
+      graph_fts = jnp.broadcast_to(graph_fts[:, None, :], (graph_fts.shape[0], hiddens.shape[1], graph_fts.shape[1]))
+      att_in = jnp.concatenate((hiddens, graph_fts), axis=-1)
+      # [batch_size, num_hiddens_for_stack] ((sum([batch_size, num_nodes, 1] * [batch_size, num_nodes, num_hiddens_for_stack]))
+      new_stack_vals = jnp.sum(jax.nn.softmax(self.att_net(att_in), axis=-1) * values, axis=-2)
+    else:
+      # [batch_size, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
+      new_stack_vals = self.stack_pooling_fun(values, axis=1)
     # values that will actually be on top of the stack in the next round
     # new_stack_vals = jnp.where(stack_ops[:, None] == StackOp.PUSH.value, new_stack_vals,
     #                            stack.reshape(-1, stack.shape[-1])[stack_pointers + 3 * jnp.arange(stack.shape[0]), :])
@@ -133,7 +147,7 @@ class GraphLevelCallstackModule(CallstackModule):
     # taken into account by only moving the pointers forward where we actually pushed
     stack = stack.reshape(-1, stack.shape[-1]).at[stack_pointers + 1 + stack.shape[1] * jnp.arange(stack.shape[0]), :] \
       .set(new_stack_vals) \
-      .reshape(mp_state.stack.shape)
+      .reshape(stack.shape)
     stack_pointers = jnp.maximum(stack_pointers + stack_ops - 1, 0)
     return stack, stack_pointers
 
@@ -167,11 +181,11 @@ class NodeLevelCallstackModule(CallstackModule):
     return stack.reshape(-1, stack.shape[2], stack.shape[3])[
            stack_pointers + jnp.arange(stack.shape[0]) * stack.shape[1], : , :]
 
-  def __call__(self, mp_state: _MessagePassingScanState, hint_preds, hiddens):
-    # [batch_size, max_stack_size/num_time_steps, num_nodes, num_hiddens_for_stack]
-    stack = mp_state.stack
-    # [batch_size]
-    stack_pointers = mp_state.stack_pointers
+  def __call__(self, stack, stack_pointers, hint_preds, hiddens, graph_fts):
+    """
+    stack: [batch_size, max_stack_size/num_time_steps, num_nodes, num_hiddens_for_stack]
+    stack_pointers: [batch_size]
+    """
 
     # [batch_size] containing [0 (pop), 1 (noop) or 2 (push)]
     stack_ops = jnp.argmax(hint_preds["stack_op"], axis=-1)
@@ -185,7 +199,7 @@ class NodeLevelCallstackModule(CallstackModule):
     stack = stack.reshape(-1, stack.shape[2], stack.shape[3])\
               .at[stack_pointers + 1 + stack.shape[1] * jnp.arange(stack.shape[0]), :, :]\
       .set(new_stack_vals) \
-      .reshape(mp_state.stack.shape)
+      .reshape(stack.shape)
     stack_pointers = jnp.maximum(stack_pointers + stack_ops - 1, 0)
     return stack, stack_pointers
 
