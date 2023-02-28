@@ -76,6 +76,7 @@ CLRS_30_ALGS = [
     'dfs',
     'dfs_callstack',
     'dfs_callstack_localhints',
+    'dfs_callstack_localhints_no_stackhint',
     'dfs_nohint_callstack',
     'dfs_recursive_callstack',
     'dfs_recursive_callstack_minimal',
@@ -328,6 +329,19 @@ SPECS = types.MappingProxyType({
         'u_pi': (Stage.HINT, Location.GRAPH, Type.POINTER),
         'u_v': (Stage.HINT, Location.GRAPH, Type.POINTER),
         'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+        'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
+    },
+    'dfs_callstack_localhints_no_stackhint': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'A': (Stage.INPUT, Location.EDGE, Type.SCALAR),
+        'adj': (Stage.INPUT, Location.EDGE, Type.MASK),
+        'pi': (Stage.OUTPUT, Location.NODE, Type.POINTER),
+        'color': (Stage.HINT, Location.NODE, Type.CATEGORICAL),
+        'u': (Stage.HINT, Location.GRAPH, Type.POINTER),
+        'u_d': (Stage.HINT, Location.GRAPH, Type.SCALAR),
+        'u_f': (Stage.HINT, Location.GRAPH, Type.SCALAR),
+        'u_pi': (Stage.HINT, Location.GRAPH, Type.POINTER),
+        'u_v': (Stage.HINT, Location.GRAPH, Type.POINTER),
         'time': (Stage.HINT, Location.GRAPH, Type.SCALAR)
     },
     'dfs_nohint_callstack': {

@@ -696,6 +696,7 @@ SAMPLERS = {
     'dfs': DfsSampler,
     'dfs_callstack': DfsSampler,
     'dfs_callstack_localhints': DfsSampler,
+    'dfs_callstack_localhints_no_stackhint': DfsSampler,
     'dfs_nohint_callstack': DfsSampler,
     'dfs_recursive_callstack': DfsSampler,
     'dfs_recursive_callstack_minimal': DfsSampler,
