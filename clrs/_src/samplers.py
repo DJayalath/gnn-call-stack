@@ -437,7 +437,7 @@ class DfsMixedTreeSampler(Sampler):
       self,
       length: int,
       p: Tuple[float, ...] = (0.3,),
-      tree_prob=0.3
+      tree_prob=0.15
   ):
     if self._rng.uniform() < tree_prob:
       graph = self._random_tree(nb_nodes=length)
