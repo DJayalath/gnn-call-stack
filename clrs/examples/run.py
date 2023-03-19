@@ -620,15 +620,19 @@ def main(unused_argv):
     common_extras = {'examples_seen': current_train_items[algo_idx],
                      'step': step,
                      'algorithm': FLAGS.algorithms[algo_idx]}
-
-    new_rng_key, rng_key = jax.random.split(rng_key)
-    test_stats = collect_and_eval(
-        test_samplers[algo_idx],
+    log_dict = {"test": {"score": {}}}
+    for i in range(len(test_samplers_all[algo_idx])):
+      new_rng_key, rng_key = jax.random.split(rng_key)
+      test_stats = collect_and_eval(
+        test_samplers_all[algo_idx][i],
         functools.partial(eval_model.predict, algorithm_index=algo_idx),
-        test_sample_counts[algo_idx],
+        test_sample_counts_all[algo_idx][i],
         new_rng_key,
         extras=common_extras)
-    logging.info('(test) algo %s : %s', FLAGS.algorithms[algo_idx], test_stats)
+      logging.info('(test) algo %s : %s', FLAGS.algorithms[algo_idx], test_stats)
+      log_dict["test"]["score"][test_lengths[i]] = test_stats["score"]
+
+    utils.log({FLAGS.algorithms[algo_idx]: log_dict}, step=step)
 
   logging.info('Done!')
 
