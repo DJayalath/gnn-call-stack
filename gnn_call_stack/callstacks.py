@@ -192,7 +192,7 @@ class NodeLevelCallstackModule(CallstackModule):
     # [batch_size, num_nodes, num_hiddens_for_stack] values that would be pushed to the stack in case of "push"
     if self.value_network is not None:
       hiddens = self.value_network(hiddens)
-    new_stack_vals = hiddens[:, :, :, :self.num_hiddens_for_stack]
+    new_stack_vals = hiddens[:, :, :self.num_hiddens_for_stack]
 
     # Overwrite the next stack element with the calculated one independent of the actual operation. The operation is
     # taken into account by only moving the pointers forward where we actually pushed
@@ -204,7 +204,7 @@ class NodeLevelCallstackModule(CallstackModule):
     return stack, stack_pointers
 
   def add_to_features(self, top_stack, node_fts, edge_fts, graph_fts):
-    graph_fts = jnp.concatenate((node_fts, top_stack), axis=-1)
+    node_fts = jnp.concatenate((node_fts, top_stack), axis=-1)
     return node_fts, edge_fts, graph_fts
 
 __all__ = [NoneCallstackModule, GraphLevelCallstackModule, NodeLevelCallstackModule]
