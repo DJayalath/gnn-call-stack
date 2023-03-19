@@ -5,7 +5,7 @@ def init(args):
   if args.use_wandb:
     kwargs = dict(project="gnn-call-stack", entity="camb-mphil", config=args)
     if args.wandb_name is not None:
-      kwargs["name"] = args.wandb_name
+      kwargs["name"] = f"{args.wandb_name}-{args.seed}"
     wandb.init(**kwargs)
     return wandb.config, wandb.config
   return args, args.flag_values_dict() # To make unpackable
