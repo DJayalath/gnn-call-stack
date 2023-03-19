@@ -596,7 +596,7 @@ def main(unused_argv):
                          'step': step,
                          'algorithm': FLAGS.algorithms[algo_idx]}
         log_dict = {"test": {"score": {}}}
-        for i in range(len(test_samplers_all)):
+        for i in range(len(test_samplers_all[algo_idx])):
           new_rng_key, rng_key = jax.random.split(rng_key)
           test_stats = collect_and_eval(
             test_samplers_all[algo_idx][i],
