@@ -1,4 +1,4 @@
-# GNNs with call stacks
+# Recursive Reasoning with Neural Networks
 
 This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published as a Tiny Paper at ICLR 2023. If you found our work helpful in your research, please consider citing
 
