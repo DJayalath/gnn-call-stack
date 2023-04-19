@@ -683,6 +683,7 @@ SAMPLERS = {
     'bubble_sort': SortingSampler,
     'heapsort': SortingSampler,
     'quicksort': SortingSampler,
+    'quicksort_local': SortingSampler,
     'quickselect': SortingSampler,
     'minimum': SortingSampler,
     'binary_search': SearchSampler,

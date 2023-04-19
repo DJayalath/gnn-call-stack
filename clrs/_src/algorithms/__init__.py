@@ -61,6 +61,7 @@ from clrs._src.algorithms.sorting import insertion_sort
 from clrs._src.algorithms.sorting import bubble_sort
 from clrs._src.algorithms.sorting import heapsort
 from clrs._src.algorithms.sorting import quicksort
+from clrs._src.algorithms.sorting import quicksort_local
 
 from clrs._src.algorithms.strings import naive_string_matcher
 from clrs._src.algorithms.strings import kmp_matcher
