@@ -100,6 +100,7 @@ CLRS_30_ALGS = [
     'optimal_bst',
     'quickselect',
     'quicksort',
+    'quicksort_local',
     'segments_intersect',
     'strongly_connected_components',
     'task_scheduling',
@@ -160,12 +161,16 @@ SPECS = types.MappingProxyType({
         'i': (Stage.HINT, Location.NODE, Type.MASK_ONE),
         'j': (Stage.HINT, Location.NODE, Type.MASK_ONE)
     },
-    # 'quicksort_local': {
-    #     'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
-    #     'key': (Stage.INPUT, Location.NODE, Type.SCALAR),
-    #     'pred': (Stage.OUTPUT, Location.NODE, Type.SHOULD_BE_PERMUTATION),
-    #     'u_pred': (),
-    # },
+    'quicksort_local': {
+        'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'key': (Stage.INPUT, Location.NODE, Type.SCALAR),
+        'pred': (Stage.OUTPUT, Location.NODE, Type.SHOULD_BE_PERMUTATION),
+        'p': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'r': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'i': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'j': (Stage.HINT, Location.NODE, Type.MASK_ONE),
+        'stack_op': (Stage.HINT, Location.GRAPH, Type.CATEGORICAL),
+    },
     'quickselect': {
         'pos': (Stage.INPUT, Location.NODE, Type.SCALAR),
         'key': (Stage.INPUT, Location.NODE, Type.SCALAR),
