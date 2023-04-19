@@ -349,7 +349,7 @@ def quicksort_local(A: _Array, A_pos=None, p=None, r=None, probes=None) -> _Out:
 	"""Quicksort (Hoare, 1962)."""
 
 	A = np.zeros_like(A)
-	A[np.arange(A.shape[0]), (np.arange(A.shape[1]) + 1) % A.shape[1]]
+	A[np.arange(A.shape[0]), (np.arange(A.shape[1]) + 1) % A.shape[1]] = 1
 
 	chex.assert_rank(A, 1)
 
