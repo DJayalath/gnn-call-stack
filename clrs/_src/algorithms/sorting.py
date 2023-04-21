@@ -260,9 +260,6 @@ def heapsort(A: _Array) -> _Out:
 def quicksort(A: _Array, A_pos=None, p=None, r=None, probes=None) -> _Out:
 	"""Quicksort (Hoare, 1962)."""
 
-	A = np.zeros_like(A)
-	A[np.arange(A.shape[0]), np.arange(A.shape[1] + 1)]
-
 	chex.assert_rank(A, 1)
 
 	def partition(A, A_pos, p, r, probes):
@@ -348,8 +345,6 @@ class StackOp(Enum):
 def quicksort_local(A: _Array, A_pos=None, p=None, r=None, probes=None) -> _Out:
 	"""Quicksort (Hoare, 1962)."""
 
-	A = np.zeros_like(A)
-	A[np.arange(A.shape[0]), (np.arange(A.shape[1]) + 1) % A.shape[1]] = 1
 
 	chex.assert_rank(A, 1)
 
@@ -425,7 +420,7 @@ def quicksort_local(A: _Array, A_pos=None, p=None, r=None, probes=None) -> _Out:
 						'j': probing.mask_one(A_pos[r], A.shape[0]),
 						'stack_op': probing.mask_one(StackOp.PUSH.value, 3)
 				})
-		quicksort(A, A_pos, p, q - 1, probes)
+		quicksort_local(A, A_pos, p, q - 1, probes)
 		probing.push(
 				probes,
 				specs.Stage.HINT,
@@ -448,7 +443,7 @@ def quicksort_local(A: _Array, A_pos=None, p=None, r=None, probes=None) -> _Out:
 						'j': probing.mask_one(A_pos[r], A.shape[0]),
 						'stack_op': probing.mask_one(StackOp.PUSH.value, 3)
 				})
-		quicksort(A, A_pos, q + 1, r, probes)
+		quicksort_local(A, A_pos, q + 1, r, probes)
 		probing.push(
 				probes,
 				specs.Stage.HINT,
