@@ -1,6 +1,6 @@
-# Recursive Reasoning with Neural Networks
+# Recursive Algorithmic Reasoning
 
-This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published as a Tiny Paper at ICLR 2023. If you found our work helpful in your research, please consider citing
+This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published as a Tiny Paper at ICLR 2023 and at the KLR workshop at ICML 2023. If you found our work helpful in your research, please consider citing
 
 ```
 @misc{
@@ -12,7 +12,9 @@ url={https://openreview.net/forum?id=TS8l4VS7_BK}
 }
 ```
 
-## Reproducing the experiments from the Tiny Paper
+And our extended workshop paper [Recursive Algorithmic Reasoning](https://arxiv.org/abs/2307.00337).
+
+## Reproducing Experiments from "Recursive Reasoning with Neural Networks" (ICLR 2023, Tiny Paper)
 
 To reproduce our results, please first follow the setup instructions in the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and checkout commit `3ed18e8`.
 
@@ -31,7 +33,7 @@ python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_loc
 python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_localhints_no_stackhint --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --nouse_recurrent_state --test_lengths 32 48 --seed <seed>
 ```
 
-## Reproducing new experiments
+## Reproducing Experiments from "Recursive Algorithmic Reasoning" (ICML 2023 KLR Workshop)
 In our experiments, we always use the random seeds 1-3.
 ### Ours
 ```
