@@ -3,12 +3,18 @@
 This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published as a Tiny Paper at ICLR 2023 and at the KLR workshop at ICML 2023. If you found our work helpful in your research, please consider citing
 
 ```
-@misc{
-juerss2023recursive,
-title={Recursive Reasoning with Neural Networks},
-author={Jonas J{\"u}r{\ss} and Dulhan Hansaja Jayalath},
-year={2023},
-url={https://openreview.net/forum?id=TS8l4VS7_BK}
+@inproceedings{juerss2023recursive,
+  author       = {Jonas J{\"{u}}r{\ss} and
+                  Dulhan Hansaja Jayalath},
+  editor       = {Krystal Maughan and
+                  Rosanne Liu and
+                  Thomas F. Burns},
+  title        = {Recursive Reasoning with Neural Networks},
+  booktitle    = {The First Tiny Papers Track at {ICLR} 2023, Tiny Papers @ {ICLR} 2023,
+                  Kigali, Rwanda, May 5, 2023},
+  publisher    = {OpenReview.net},
+  year         = {2023},
+  url          = {https://openreview.net/pdf?id=TS8l4VS7\_BK}
 }
 ```
 
