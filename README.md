@@ -1,45 +1,20 @@
 # Recursive Algorithmic Reasoning
 
-This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published as a Tiny Paper at ICLR 2023 and at the KLR workshop at ICML 2023. If you found our work helpful in your research, please consider citing
+This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and aims to build GNNs with call stacks for solving recursive algorithmic problems. It was published at the KLR workshop at ICML 2023 and as a full conference paper + oral at LoG 2023. If you found our work helpful in your research, please consider citing
 
 ```
 @inproceedings{juerss2023recursive,
-  author       = {Jonas J{\"{u}}r{\ss} and
-                  Dulhan Hansaja Jayalath},
-  editor       = {Krystal Maughan and
-                  Rosanne Liu and
-                  Thomas F. Burns},
-  title        = {Recursive Reasoning with Neural Networks},
-  booktitle    = {The First Tiny Papers Track at {ICLR} 2023, Tiny Papers @ {ICLR} 2023,
-                  Kigali, Rwanda, May 5, 2023},
-  publisher    = {OpenReview.net},
-  year         = {2023},
-  url          = {https://openreview.net/pdf?id=TS8l4VS7\_BK}
+    title = {Recursive Algorithmic Reasoning},
+    author = {Jonas J{\"{u}}r{\ss} and
+              Dulhan Jayalath and
+              Petar Velickovic},
+    booktitle = {The Second Learning on Graphs Conference},
+    year = {2023},
+    url = {https://openreview.net/forum?id=43M1bPorxU}
 }
 ```
 
-And our extended workshop paper [Recursive Algorithmic Reasoning](https://arxiv.org/abs/2307.00337).
-
-## Reproducing Experiments from "Recursive Reasoning with Neural Networks" (ICLR 2023, Tiny Paper)
-
-To reproduce our results, please first follow the setup instructions in the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and checkout commit `3ed18e8`.
-
-### With callstack (ours)
-```
-python -m clrs.examples.run --callstack_type graphlevel --value_network 128_relu_64 --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32 48 --nouse_recurrent_state --seed <seed>
-```
-
-### Only stack operation hint
-```
-python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --nouse_recurrent_state --test_lengths 32 48 --seed <seed>
-```
-
-### Neither callstack nor stack operation hint
-```
-python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_localhints_no_stackhint --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --nouse_recurrent_state --test_lengths 32 48 --seed <seed>
-```
-
-## Reproducing Experiments from "Recursive Algorithmic Reasoning" (ICML 2023 KLR Workshop)
+## Reproducing Experiments from "Recursive Algorithmic Reasoning" (LoG 2023)
 In our experiments, we always use the random seeds 1-3.
 ### Ours
 ```
@@ -55,7 +30,7 @@ python -m clrs.examples.run --train_steps 20000 --callstack_type none --algorith
 python -m clrs.examples.run --train_steps 20000 --callstack_type graphlevel --value_network 128_relu_64 --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32,96 --wandb_name recurrent --seed <seed>
 ```
 
-### No stack and no hidden state
+### No stack and hidden state
 ```
 python -m clrs.examples.run --train_steps 20000 --callstack_type none --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32,96 --wandb_name no_stack-recurrent --seed <seed>
 ```
@@ -88,4 +63,28 @@ python -m clrs.examples.run --train_steps 20000 --callstack_type none --value_ne
 ### Node-level stack
 ```
 python -m clrs.examples.run --train_steps 20000 --callstack_type nodelevel --value_network 128_relu_64 --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32,96 --nouse_recurrent_state --wandb_name nodelevel --seed <seed>
+```
+
+### Node-level stack + recurrent state
+```
+python -m clrs.examples.run --train_steps 20000 --callstack_type nodelevel --value_network 128_relu_64 --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32,96 --wandb_name nodelevel-recurrent --seed <seed>
+```
+
+## Reproducing Experiments from "Recursive Reasoning with Neural Networks" (ICLR 2023, Tiny Paper)
+
+To reproduce our results, please first follow the setup instructions in the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and checkout commit `3ed18e8`.
+
+### With callstack (ours)
+```
+python -m clrs.examples.run --callstack_type graphlevel --value_network 128_relu_64 --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --test_lengths 32 48 --nouse_recurrent_state --seed <seed>
+```
+
+### Only stack operation hint
+```
+python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_localhints --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --nouse_recurrent_state --test_lengths 32 48 --seed <seed>
+```
+
+### Neither callstack nor stack operation hint
+```
+python -m clrs.examples.run --callstack_type none --algorithms dfs_callstack_localhints_no_stackhint --hint_teacher_forcing 0.5 --sampler DfsMixedTreeSampler --hints_to_output u_pi-pi[u] --nouse_recurrent_state --test_lengths 32 48 --seed <seed>
 ```
