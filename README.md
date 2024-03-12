@@ -1,13 +1,13 @@
 # Recursive Algorithmic Reasoning
 
-This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and builds GNNs with call stacks for solving recursive algorithmic problems. It was published at the KLR workshop at ICML 2023 and as a full conference paper + oral at LoG 2023. You can read the paper [here](https://openreview.net/forum?id=43M1bPorxU). If you found our work helpful in your research, please consider citing
+This work is based on the [CLRS30 algorithmic reasoning benchmark](https://github.com/deepmind/clrs) and builds GNNs with call stacks for solving recursive algorithmic problems. It was published as a full conference paper + oral (top 5%) at Learning on Graphs (LoG) 2023 and first featured at the Knowledge and Logical Reasoning (KLR) workshop at ICML 2023. You can read the full paper [here](https://openreview.net/forum?id=43M1bPorxU). If you found our work helpful in your research, please cite
 
 ```
 @inproceedings{juerss2023recursive,
     title = {Recursive Algorithmic Reasoning},
     author = {Jonas J{\"{u}}r{\ss} and
               Dulhan Jayalath and
-              Petar Velickovic},
+              Petar Veli\v{c}kovi\'{c}},
     booktitle = {The Second Learning on Graphs Conference},
     year = {2023},
     url = {https://openreview.net/forum?id=43M1bPorxU}
