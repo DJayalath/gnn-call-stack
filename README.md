@@ -10,7 +10,12 @@ This work is based on the [CLRS30 algorithmic reasoning benchmark](https://githu
               Petar Veli\v{c}kovi\'{c}},
     booktitle = {The Second Learning on Graphs Conference},
     year = {2023},
-    url = {https://openreview.net/forum?id=43M1bPorxU}
+    series = {Proceedings of Machine Learning Research},
+    volume = {231},
+    pages = {5},
+    publisher = {{PMLR}},
+    year = {2023},
+    url = {https://proceedings.mlr.press/v231/jurss24a.html},
 }
 ```
 
